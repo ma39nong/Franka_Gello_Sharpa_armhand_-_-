@@ -136,6 +136,29 @@ GELLO_SOFTWARE_ROOT=/home/descfly/llx/gello_software \
 迁移顺序、硬件存在性和左右 Wuji 网络检查参数见
 [docs/NEW_COMPUTER_SETUP.md](docs/NEW_COMPUTER_SETUP.md)。
 
+### Git 克隆范围与本机依赖
+
+GitHub 保存源码、配置模板、文档和 Git 提交历史，但以下 `.gitignore` 排除的
+本机内容不会随 `git clone` 下载：
+
+- `portable_deps/gello_software/`：GELLO 驱动及 DynamixelSDK；
+- `portable_deps/litchi_hardware/`：Sharpa/MANUS 源码及供应商运行库；
+- `docker/.env`：本机路径、端口和许可确认等环境配置；
+- `data_collection/config/cameras.yaml`：本机三相机序列号与物理位置配置；
+- `ros_ws/build/`、`ros_ws/install/`、`ros_ws/log/`：ROS 构建产物；
+- Python/测试缓存、egg-info 和其他可重新生成的编译产物。
+
+因此，在另一台电脑上仅克隆 GitHub 仓库并不等于获得完整的可运行迁移包。
+`install_environment.sh` 会检查两个 `portable_deps` 子目录；缺少任一目录时会停止，
+不会在运行项目时自动下载。`gello_software` 可以从公开上游重新获取，但
+`litchi_hardware` 中包含受供应商许可证约束的 Sharpa/MANUS 文件，应通过 U 盘、
+局域网或有权限的私有存储从已授权电脑单独复制，不要发布到公开仓库。
+
+`portable_deps/litchi_hardware` 中还有超过 GitHub 普通 Git 单文件 100 MB 限制的
+MANUS SDK 动态库。Git LFS 可以解决文件大小限制，但不能替代供应商授权；未确认
+许可证允许前，不应上传。完整工程迁移方式见
+[工程迁移与一键安装说明](工程迁移与一键安装说明.md)。
+
 ## 启动前检查
 
 标准模式和 Wuji 模式会自动运行完整 preflight（含 GELLO 端口和 MANUS 标定）。
