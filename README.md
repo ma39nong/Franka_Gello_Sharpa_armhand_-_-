@@ -313,6 +313,61 @@ conda run --no-capture-output -n gello-upper-body-teleop \
 [adapters/wuji/README.md](adapters/wuji/README.md)。首次真机验证应采用低电流、
 单手、单侧 Engage。
 
+## GELLO 双臂 + MANUS/Sharpa 双手录制（新增）
+
+原有遥操入口和默认模式保持不变。需要把双 FR3、双 Sharpa 手以及三台 Orbbec
+相机录入同一个 ROS 2 bag 时，使用下面的独立三终端流程。录制器只订阅 ROS topic，
+不会向机器人发送命令，也不会建立第二条 libfranka/FCI 连接。
+
+终端 1 启动原有 GELLO 双臂流程：
+
+```bash
+cd /home/descfly/ZH/gello_upper_body_teleop
+./ops/run/run_gello_arms_only.sh
+```
+
+终端 2 使用隔离的 CycloneDDS 配置启动 MANUS/Sharpa 双手：
+
+```bash
+cd /home/descfly/ZH/gello_upper_body_teleop
+./ops/run/run_sharpa_hands_cyclonedds.sh
+```
+
+终端 3 在确认双臂和双手正常跟随后启动普通录制：
+
+```bash
+cd /home/descfly/ZH/gello_upper_body_teleop
+./ops/run/start_sharpa_arm_recording.sh --with-cameras
+```
+
+普通录制包含双臂 action/state、双手 command/state、三路 RGB 和头部深度，默认写入
+`/home/descfly/franka_teleop_data/bags/gello_sharpa/episodeN/`。如需额外录入双手
+五指的 F6 wrench 和 deformation（共 20 个触觉 topic），终端 3 改用：
+
+```bash
+./ops/run/start_sharpa_arm_recording_with_tactile.sh --with-cameras
+```
+
+普通版和触觉版互斥，不能同时启动。触觉版输出到
+`/home/descfly/franka_teleop_data/bags/gello_sharpa_tactile/episodeN/`，并要求终端 2
+已发布全部触觉 topic，不支持 `--without-hands`。原普通录制配置和命令没有改变。
+
+只复验机械臂和相机、现场没有手套或 Sharpa 时，不启动终端 2，并使用：
+
+```bash
+./ops/run/start_sharpa_arm_recording.sh --without-hands --with-cameras
+```
+
+采集器显示 `READY` 后，通过 Operator GUI 或数据采集踏板的 `L` 键开始/停止
+episode，录制中按 `Space` 添加里程碑。停止后等待 rosbag 完成收尾、完整性校验和
+数据质量评价；不要用 `Ctrl-C` 停止单个 episode。结束全部录制且当前没有活动
+episode 时，再按 `Ctrl-C` 退出常驻采集器和相机。
+
+不要在双臂遥操期间运行 `manus_sharpa_record/record.py`。该程序会直接创建新的
+`pylibfranka.Robot` 连接，与已经占用 FCI 的 `franka_ros2_control_node` 冲突。
+完整 topic、相机就绪条件、QoS、触觉验收阈值和 USB 踏板说明见
+[Sharpa 双臂双手与三相机录制](data_collection/docs/SHARPA_ARM_RECORDING.md)。
+
 ## 双 FR3 MoveIt
 
 先用假硬件验证规划和 RViz：
@@ -395,5 +450,6 @@ docker compose ps
 - [手动灵巧手 UI](apps/hand_ui/README.md)
 - [Wuji 手集成](adapters/wuji/README.md)
 - [Harvest 数据采集](data_collection/README.md)
+- [Sharpa 双臂双手与三相机录制](data_collection/docs/SHARPA_ARM_RECORDING.md)
 - [Powder weighing 特殊任务](tasks/powderweighing/README.md)
 - [第三方代码与许可证](THIRD_PARTY_NOTICES.md)
