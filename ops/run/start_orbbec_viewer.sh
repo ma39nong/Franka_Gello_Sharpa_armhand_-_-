@@ -2,11 +2,12 @@
 set -euo pipefail
 
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-viewer=/opt/OrbbecSDK_v2.9.3/tools/OrbbecViewer
-viewer_dir=$(dirname "${viewer}")
+viewer=$(ls -d /opt/OrbbecSDK_v2.*/tools/OrbbecViewer 2>/dev/null | sort -V | tail -1)
+viewer_dir=$(dirname "${viewer:-/nonexistent}")
 
-if [[ ! -x ${viewer} ]]; then
-  echo "Orbbec SDK v2 Viewer is missing: ${viewer}" >&2
+if [[ -z ${viewer} || ! -x ${viewer} ]]; then
+  echo "Orbbec SDK v2 Viewer is missing under /opt/OrbbecSDK_v2.*/tools/" >&2
+  echo "The SDK v1 Viewer cannot open a Gemini 435Le (pid 0x0815)." >&2
   exit 1
 fi
 if docker compose --file "${repo}/docker/compose.yaml" \

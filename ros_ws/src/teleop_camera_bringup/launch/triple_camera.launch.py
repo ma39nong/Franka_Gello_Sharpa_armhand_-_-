@@ -67,6 +67,7 @@ def _camera_actions(context):
             launch_arguments={
                 "camera_name": name,
                 "serial_number": str(entry["serial_number"]),
+                "enumerate_net_device": "true" if name == "cam0" else "false",
                 "sync_mode": "standalone",
                 "config_file_path": str(parameter_file),
                 "log_level": str(cameras.get("log_level", "none")),
@@ -94,4 +95,3 @@ def generate_launch_description():
             OpaqueFunction(function=_camera_actions),
         ]
     )
-

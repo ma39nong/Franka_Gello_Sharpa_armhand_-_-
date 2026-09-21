@@ -32,6 +32,14 @@ def test_build_and_runtime_each_require_explicit_sdk_license_acceptance():
     assert "!= \"YES\"" in launch
 
 
+def test_only_head_camera_enumerates_network_devices():
+    launch = (
+        REPO_ROOT
+        / "ros_ws/src/teleop_camera_bringup/launch/triple_camera.launch.py"
+    ).read_text(encoding="utf-8")
+    assert '"enumerate_net_device": "true" if name == "cam0" else "false"' in launch
+
+
 def test_original_license_notice_and_sdk_eula_are_retained():
     required = [
         "ros_ws/src/orbbec_camera/LICENSE",

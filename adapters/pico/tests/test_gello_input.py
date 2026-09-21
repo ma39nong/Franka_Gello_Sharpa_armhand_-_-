@@ -25,13 +25,13 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 def test_checked_in_config_preserves_verified_identities_and_directions():
     config = load_gello_config(REPO_ROOT / "config" / "modes" / "gello.yaml")
 
-    assert config.left.expected_serial == "4303A73A5157375037202020FF100616"
-    assert config.right.expected_serial == "17E84ADC5157375037202020FF10131E"
+    assert config.left.expected_serial == "3523CE1C5157375037202020FF102718"
+    assert config.right.expected_serial == "CBB557875157375037202020FF0D3429"
     assert config.joint_ids == (1, 2, 3, 4, 5, 6, 7)
-    assert config.left.direction_correction == (1, 1, 1, 1, 1, 1, 1)
-    assert config.right.direction_correction == (1, 1, 1, 1, 1, -1, 1)
-    assert config.left.joint_sensitivity == (0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.9)
-    assert config.right.joint_sensitivity == (1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+    assert config.left.direction_correction == (1, -1, 1, 1, 1, -1, 1)
+    assert config.right.direction_correction == (-1, 1, 1, 1, 1, 1, -1)
+    assert config.left.joint_sensitivity == (0.7, 0.7, 1.0, 1.0, 1.0, 1.0, 1.0)
+    assert config.right.joint_sensitivity == (0.7, 0.7, 1.0, 1.0, 1.0, 1.0, 1.0)
     assert config.left.max_relative_delta == (1.5,) * 7
     physical_spans = hardware.UPPER_LIMITS[7:14] - hardware.LOWER_LIMITS[7:14]
     np.testing.assert_allclose(

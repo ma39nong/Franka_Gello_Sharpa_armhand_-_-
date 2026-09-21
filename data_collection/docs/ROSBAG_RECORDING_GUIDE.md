@@ -9,6 +9,9 @@
 > `encoding` 等运行时信息，应对具体 bag 执行 `ros2 bag info` 后填写或确认。
 > 当前工作树也没有本机部署文件 `data_collection/config/cameras.yaml`；正式录制前
 > 需由 `cameras.yaml.example` 生成本机文件，填好三台相机唯一序列号和物理语义。
+>
+> GELLO 双臂、MANUS/Sharpa 双手与三相机联合录制使用独立说明：
+> [`SHARPA_ARM_RECORDING.md`](SHARPA_ARM_RECORDING.md)。该流程不直接连接 FR3 FCI。
 
 ## 1. 一句话结论
 

@@ -94,3 +94,22 @@ def test_start_recording_script_keeps_collection_outside_control_stack():
     assert "bags/gello" in script
     assert "record_gello.yaml" in container
     assert "convert_gello_lerobot_v2.yaml" in convert
+
+
+def test_sharpa_collection_reuses_persistent_episode_controller():
+    script = (REPO_ROOT / "ops/run/start_sharpa_arm_recording.sh").read_text(
+        encoding="utf-8"
+    )
+    container = (
+        REPO_ROOT / "ops/run/run_sharpa_camera_recording_container.sh"
+    ).read_text(encoding="utf-8")
+
+    assert "record_gello_sharpa.yaml" in script
+    assert "sharpa_recording_postflight" not in script
+    assert "ros2 bag record" not in script
+    assert "docker compose run -d" in script
+    assert "docker kill --signal=TERM" in script
+    assert "rosbag_data_collector" in container
+    assert "setsid" in container
+    assert "camera_stream_health wait" in container
+    assert "COLLECTION_OUTPUT_BAG" not in container

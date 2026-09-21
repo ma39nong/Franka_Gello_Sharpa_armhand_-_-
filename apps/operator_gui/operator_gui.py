@@ -52,11 +52,11 @@ STATUS_TIMEOUT_SECONDS = 3.0
 SIDES = ("left", "right")
 PEDAL_BINDINGS = {
     "A": ("toggle_hold", "arm", "left"),
-    "Q": ("toggle_hold", "arm", "right"),
+    "C": ("toggle_hold", "arm", "right"),
 }
 COLLECTION_SHORTCUTS = {"L": "toggle_recording", "Space": "mark_milestone"}
 PRESET_KEYS = ("W", "E")
-ARM_HOLD_KEY_HINTS = {"left": "A", "right": "Q"}
+ARM_HOLD_KEY_HINTS = {"left": "A", "right": "C"}
 
 
 class ConnectionDialog(QDialog):
@@ -448,7 +448,7 @@ class OperatorWindow(QMainWindow):
 
         shortcut_hint = QLabel(
             "Shortcuts: L 开始/停止录制 · Space 中间完成标记  |  "
-            "A left Hold · Q right Hold"
+            "A left Hold · C right Hold"
         )
         shortcut_hint.setStyleSheet("color: #666;")
         layout.addWidget(shortcut_hint)

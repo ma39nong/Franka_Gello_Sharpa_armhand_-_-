@@ -192,7 +192,7 @@ linker_hand_ros2_sdk         O30i / G20 厂商驱动
 
 ### 5.2 标定与连续化
 
-原始角乘以 `standard_signs * direction_correction`。当前左臂校正为全 `+1`，右臂为 `[1, 1, 1, 1, 1, -1, 1]`（右 J6 反相），`standard_signs` 为 `[1, -1, 1, -1, 1, 1, 1]`。
+原始角乘以 `standard_signs * direction_correction`。当前左臂校正为 `[1, -1, 1, 1, 1, -1, 1]`（左 J2/J6 反相），右臂为 `[-1, 1, 1, 1, 1, 1, -1]`（右 J1/J7 反相），`standard_signs` 为 `[1, -1, 1, -1, 1, 1, 1]`。
 
 相邻样本做 \(2\pi\) 展开。单关节跳变超过 `max_joint_jump`（0.35 rad）时该侧本拍无效；连续 10 个稳定样本后才 rebase。重新跟随必须由操作员再 Engage，映射器在 Engage 边沿用实测机器人姿态锚定。
 
@@ -315,16 +315,17 @@ GUI 连 `127.0.0.1:5590`，行分隔 JSON：`{"id","command","arguments"}` → `
 
 | 操作 | 作用对象 |
 | --- | --- |
+| A / C | 左/右臂 Hold |
 | L | 开始录制；录制中再次按下则结束并校验 |
 | Space | 录制中保存中间完成标记，继续录制 |
-| A / Q | 左/右臂 Hold |
 | DISENGAGE ALL | 停所有跟随 |
 | W / E | 相对末端预设快捷键 |
 
+两块 PCsensor 踏板已分别写入 `A/C` 和 `L/Space`，不依赖固定 USB 端口。
+踏板模拟普通键盘，Operator GUI 窗口必须获得键盘焦点。
 左右 `Start arm` 只保留 GUI 按钮，不再绑定键盘快捷键。
 左右 `Start hand` 同样只保留 GUI 按钮，取消原来的 `R` / `B` 跟随快捷键。
-左臂 Hold 使用 `A`；`Space` 保存中间完成标记，原 `R` 标记快捷键取消。
-采集终端同样使用 `L` 起停、`Space` 保存中间标记。
+采集终端仍可使用 `L` 起停、`Space` 保存中间标记。
 “丢弃最近一次”保留 GUI 按钮；采集终端备用丢弃键仍为 `D`。
 
 Home 分两阶段：先等所选 FR3 到位并稳定，再让对应 Wuji Hand 2 从实测滑到手部 Home。缺任一侧目标则在臂运动前拒绝。录 Home 必须先停该侧臂和手，只写文件，不驱动硬件。

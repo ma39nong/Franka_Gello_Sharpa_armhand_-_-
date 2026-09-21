@@ -50,14 +50,14 @@ GELLO motor 8 is never opened. MANUS exclusively owns both dexterous hands.
 `config/modes/gello.yaml` identifies the current OpenRB-150 pair by stable USB
 serial rather than transient `ttyACM` enumeration:
 
-- left: `4303A73A5157375037202020FF100616`
-- right: `17E84ADC5157375037202020FF10131E`
+- left: `3523CE1C5157375037202020FF102718`
+- right: `CBB557875157375037202020FF0D3429`
 
 Both identities, motor IDs 1-7, model number 1200, and live joint streams were
 verified on 2026-08-17. Never infer left/right from `ttyACM0` or `ttyACM1`.
 The current replacement-pair `direction_correction` vectors are
-`[1,1,1,1,1,1,1]` on the left and `[1,1,1,1,1,-1,1]` on the right (right J6
-flipped on 2026-09-02) before `standard_signs` is applied.
+`[1,-1,1,1,1,-1,1]` on the left and `[-1,1,1,1,1,1,-1]` on the right (left
+J2/J6 and right J1/J7 flipped on 2026-09-16) before `standard_signs` is applied.
 The GELLO mapper uses `0.8 rad/s`; the outer safety gateway retains the
 effective `0.7 rad/s` ceiling.
 
@@ -117,22 +117,18 @@ ops/run/run_teleop.sh
 
 Then start the existing operator GUI. The backend starts disengaged.
 
-The full Operator GUI accepts five USB foot-pedal keys. Arm and MANUS/hand
-following are independent; a start pedal toggles only its named target:
+The two PCsensor foot-pedal units are programmed with distinct keyboard keys:
 
-| Pedal key | Action |
-|---|---|
-| `L` | Toggle left GELLO → left FR3 arm |
-| `R` | Toggle left MANUS → left hand |
-| `Space` | Home both FR3 arms |
-| `A` | Toggle right GELLO → right FR3 arm |
-| `B` | Toggle right MANUS → right hand |
+| Pedal | Key | Action |
+|---|---|---|
+| Arm pedal | `A` | Toggle left arm Hold |
+| Arm pedal | `C` | Toggle right arm Hold |
+| Collection pedal | `L` | Start/stop the current episode |
+| Collection pedal | `Space` | Mark a milestone while recording |
 
-Pedal auto-repeat is disabled. Home is a one-shot request and disengages both
-arm and hand followers while the reset trajectory owns the command path.
-`DISENGAGE ALL` remains the common software stop for every follower. The GUI
-window must have keyboard focus for these ordinary keyboard-emulating pedals;
-hardware emergency stopping remains separate.
+Pedal auto-repeat is disabled. The GUI window must have keyboard focus for these
+ordinary keyboard-emulating pedals. `DISENGAGE ALL` remains the common software
+stop for every follower; hardware emergency stopping remains separate.
 
 ### Preset relative actions
 

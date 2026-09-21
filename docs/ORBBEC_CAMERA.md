@@ -1,6 +1,6 @@
 # Orbbec Gemini 435Le
 
-Verified hardware: Gemini 435Le `CP4E46300048`, camera `192.168.1.10:8090`, host camera address `192.168.1.53/24`.
+Verified hardware: Gemini 435Le `CP4N651006F`, camera `192.168.1.123:8090`, host camera address `192.168.1.53/24`. (The unit and/or its address has changed at least twice since this doc was first written — earlier revisions recorded `CP4E46300048`/`192.168.1.10` and `CP4N5630008Z`. Re-verify the serial with the SDK log or Viewer discovery rather than trusting any single doc.)
 
 ## Network
 
@@ -11,7 +11,7 @@ The current `Wired connection 1` profile carries both `172.16.0.6/24` for FR3 an
 ```bash
 nmcli -g ipv4.addresses connection show 'Wired connection 1'
 ip -4 -br address show dev enp6s0
-nc -vz -w 3 192.168.1.10 8090
+nc -vz -w 3 192.168.1.123 8090
 ```
 
 If the persistent camera address is missing, add it only while FCI is stopped:
@@ -63,4 +63,4 @@ OrbbecViewer; `./ops/run/start_recording.sh` refuses those conflicts. See
 
 ## FCI isolation
 
-RGB-D traffic and the 1 kHz Franka sessions currently share `enp6s0`. Basic streaming and ping checks passed, but they do not prove worst-case FCI timing. Production data collection should put `192.168.1.53/24` on a dedicated Gigabit NIC and confirm `ip route get 192.168.1.10` selects it.
+RGB-D traffic and the 1 kHz Franka sessions currently share `enp6s0`. Basic streaming and ping checks passed, but they do not prove worst-case FCI timing. Production data collection should put `192.168.1.53/24` on a dedicated Gigabit NIC and confirm `ip route get 192.168.1.123` selects it.

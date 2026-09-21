@@ -9,7 +9,7 @@ Current GELLO integration state as of 2026-08-01. Use
 ```text
 left FR3    172.16.0.3          right FR3  172.16.0.2
 host        enp6s0: 172.16.0.6/24, 192.168.1.53/24
-Orbbec      192.168.1.10:8090
+Orbbec      192.168.1.123:8090
 left hand   G20  can0 0x28      right hand O30i libcanbus USB a8fa:8598
 VIVE hand tracker ids: config/modes/vive.yaml    PICO fallback ids: config/modes/pico.yaml
 ```

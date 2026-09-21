@@ -206,7 +206,7 @@ services:
       - --host
       - 127.0.0.1
       - --port
-      - "5591"
+      - "${PRESET_IK_PORT:-5591}"
       - --data-root
       - /data/arm_ui
     depends_on:
@@ -324,9 +324,10 @@ services:
       - orbbec_camera
       - gemini435_le.launch.py
       - enumerate_net_device:=false
-      - net_device_ip:=192.168.1.10
+      - net_device_ip:=192.168.1.123
       - net_device_port:=8090
       - connection_delay:=1
+      - device_access_mode:=mr
       - enable_point_cloud:=false
       - enable_colored_point_cloud:=false
 
@@ -339,6 +340,14 @@ services:
 
   data-collection:
     <<: *runtime
+    # Camera drivers share one SDK mutex inside this container.  Do not reuse
+    # the host IPC namespace: a root-owned lock left by the standalone Orbbec
+    # service prevents this UID-mapped collection container from opening it.
+    ipc: private
+    # The shared /dev bind in the common runtime would otherwise re-expose the
+    # host's /dev/shm (and its root-owned Orbbec lock) despite private IPC.
+    tmpfs:
+      - /dev/shm
     profiles: [collection]
     privileged: true
     stdin_open: true

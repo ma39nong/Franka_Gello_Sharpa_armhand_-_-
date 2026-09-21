@@ -19,6 +19,7 @@ from teleop_data_collector.bag_validation import (
     boundary_timing_warnings,
 )
 from teleop_data_collector.collector_contract import (
+    SHARPA_TOPICS,
     topic_contracts,
     validate_recording_contract,
 )
@@ -26,10 +27,29 @@ from teleop_data_collector.collector_contract import (
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 CONFIG = REPO_ROOT / "data_collection/config/record_gello.yaml"
+SHARPA_CONFIG = REPO_ROOT / "data_collection/config/record_gello_sharpa.yaml"
+SHARPA_TACTILE_CONFIG = (
+    REPO_ROOT / "data_collection/config/record_gello_sharpa_tactile.yaml"
+)
+SHARPA_TACTILE_QOS = (
+    REPO_ROOT / "data_collection/config/rosbag_qos_sharpa_tactile.yaml"
+)
 
 
 def _config():
     return yaml.safe_load(CONFIG.read_text(encoding="utf-8"))[
+        "teleop_data_collector"
+    ]["ros__parameters"]
+
+
+def _sharpa_config():
+    return yaml.safe_load(SHARPA_CONFIG.read_text(encoding="utf-8"))[
+        "teleop_data_collector"
+    ]["ros__parameters"]
+
+
+def _sharpa_tactile_config():
+    return yaml.safe_load(SHARPA_TACTILE_CONFIG.read_text(encoding="utf-8"))[
         "teleop_data_collector"
     ]["ros__parameters"]
 
@@ -70,6 +90,118 @@ def test_recording_contract_requires_explicit_hold_status_topics():
     del config["topics"]["arm_command_status"]
     with pytest.raises(ValueError, match="HOLD status topic"):
         validate_recording_contract(config)
+
+
+def test_sharpa_recording_contract_has_complete_dual_hand_and_camera_streams():
+    config = _sharpa_config()
+    validate_recording_contract(config)
+    topics = topic_contracts(config["topics"])
+    required = {item.topic for item in topics if item.required}
+
+    assert len(topics) == 12
+    assert SHARPA_TOPICS <= required
+    assert "/teleop/wuji/telemetry_status" not in required
+    assert required >= {
+        "/teleop/validated_arm_commands",
+        "/teleop/arm_command_status",
+        "/left/franka/joint_states",
+        "/right/franka/joint_states",
+        "/cam0/color/image_raw",
+        "/cam0/depth/image_raw",
+        "/cam1/color/image_raw",
+        "/cam2/color/image_raw",
+    }
+
+
+def test_sharpa_recording_contract_rejects_partial_hand_telemetry():
+    config = _sharpa_config()
+    del config["topics"]["right_hand_state"]
+
+    with pytest.raises(ValueError, match="both command and state"):
+        validate_recording_contract(config)
+
+
+def test_sharpa_tactile_contract_adds_all_ten_finger_stream_pairs():
+    config = _sharpa_tactile_config()
+    validate_recording_contract(config)
+    topics = topic_contracts(config["topics"])
+    by_topic = {item.topic: item for item in topics}
+    expected = {
+        f"/sharpa/{side}/tactile/{finger}/{stream}"
+        for side in ("left", "right")
+        for finger in ("thumb", "index", "middle", "ring", "pinky")
+        for stream in ("wrench", "deformation")
+    }
+
+    assert len(topics) == 32
+    assert expected <= set(by_topic)
+    assert all(by_topic[name].required for name in expected)
+    assert all(by_topic[name].min_frequency_hz == 18.0 for name in expected)
+    assert all(by_topic[name].max_gap_ms == 500.0 for name in expected)
+    assert all(
+        by_topic[name].type_name
+        == (
+            "geometry_msgs/msg/WrenchStamped"
+            if name.endswith("/wrench")
+            else "sensor_msgs/msg/Image"
+        )
+        for name in expected
+    )
+    assert "rosbag_record_default_qos" not in config
+    qos_flag = config["rosbag_record_args"].index("--qos-profile-overrides-path")
+    assert config["rosbag_record_args"].count("--qos-profile-overrides-path") == 1
+    assert config["rosbag_record_args"][qos_flag + 1].endswith(
+        "/data_collection/config/rosbag_qos_sharpa_tactile.yaml"
+    )
+    assert config["data_root"].endswith("/gello_sharpa_tactile")
+
+
+def test_sharpa_tactile_rosbag_qos_matches_each_real_publisher():
+    config = _sharpa_tactile_config()
+    qos = yaml.safe_load(SHARPA_TACTILE_QOS.read_text(encoding="utf-8"))
+    recorded = {
+        raw["topic"]
+        for section in ("topics", "static_topics")
+        for raw in config[section].values()
+    }
+
+    assert set(qos) == recorded
+    reliable = {
+        "/teleop/validated_arm_commands",
+        "/teleop/arm_command_status",
+        "/left/franka/joint_states",
+        "/right/franka/joint_states",
+        "/sharpa/left/command",
+        "/sharpa/right/command",
+        "/cam0/color/image_raw",
+        "/cam0/depth/image_raw",
+        "/cam1/color/image_raw",
+        "/cam2/color/image_raw",
+        "/cam0/color/camera_info",
+        "/cam0/depth/camera_info",
+        "/cam1/color/camera_info",
+        "/cam2/color/camera_info",
+    }
+    best_effort = recorded - reliable
+
+    assert {
+        "/sharpa/left/joint_states",
+        "/sharpa/right/joint_states",
+    } <= best_effort
+    assert len(best_effort) == 22
+    assert all(qos[topic]["reliability"] == "reliable" for topic in reliable)
+    assert all(
+        qos[topic]["reliability"] == "best_effort" for topic in best_effort
+    )
+    assert all(
+        profile == {
+            "history": "keep_last",
+            "depth": 10,
+            "reliability": profile["reliability"],
+            "durability": "volatile",
+        }
+        for profile in qos.values()
+    )
 
 
 def test_telemetry_counters_use_episode_delta_not_process_lifetime_total():

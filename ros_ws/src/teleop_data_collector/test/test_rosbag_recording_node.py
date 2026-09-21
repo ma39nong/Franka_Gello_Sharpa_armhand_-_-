@@ -185,6 +185,33 @@ def test_explicit_qos_overrides_arg_is_preserved():
     assert not _has_qos_overrides_arg(["--storage-preset-profile", "fastwrite"])
 
 
+def test_explicit_qos_file_prevents_generated_global_override(tmp_path, monkeypatch):
+    commands = []
+
+    def popen(command, **kwargs):
+        commands.append(command)
+        return SimpleNamespace(poll=lambda: None, wait=lambda **kw: 0, returncode=0)
+
+    monkeypatch.setattr(rosbag_recording_node.shutil, "which", lambda _: "/usr/bin/ros2")
+    monkeypatch.setattr(rosbag_recording_node.subprocess, "Popen", popen)
+    recorder = rosbag_recording_node.RosbagEpisodeRecorder(
+        _Node([]),
+        tmp_path,
+        "episode",
+        ("/cam0/color/image_raw",),
+        30.0,
+        ("--qos-profile-overrides-path", "/config/per_topic.yaml"),
+        default_qos={"reliability": "best_effort"},
+    )
+
+    recorder.start()
+
+    assert commands[0].count("--qos-profile-overrides-path") == 1
+    qos_flag = commands[0].index("--qos-profile-overrides-path")
+    assert commands[0][qos_flag + 1] == "/config/per_topic.yaml"
+    assert recorder._generated_qos_path is None
+
+
 def test_success_message_is_green_only_for_an_attached_terminal():
     text = "Bag saved to /collection_data/bags/gello/episode165."
     assert _terminal_success(text, color_enabled=True) == (

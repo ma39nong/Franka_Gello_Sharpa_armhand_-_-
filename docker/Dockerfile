@@ -46,6 +46,7 @@ RUN wget -q \
 
 WORKDIR /opt/vendor_ws/src
 COPY patches/orbbec_ros2_skip_uvc_for_network.patch /tmp/
+COPY patches/orbbec_monitor_access_mode.patch /tmp/
 RUN git clone --depth 1 --branch v2.0.4 \
         https://github.com/frankarobotics/franka_ros2.git \
     && git clone --depth 1 --branch "${FRANKA_DESCRIPTION_TAG}" \
@@ -54,6 +55,8 @@ RUN git clone --depth 1 --branch v2.0.4 \
         https://github.com/orbbec/OrbbecSDK_ROS2.git \
     && git -C OrbbecSDK_ROS2 apply \
         /tmp/orbbec_ros2_skip_uvc_for_network.patch \
+    && git -C OrbbecSDK_ROS2 apply \
+        /tmp/orbbec_monitor_access_mode.patch \
     && rm -rf \
         franka_ros2/franka_gazebo \
         franka_ros2/franka_fr3_moveit_config \

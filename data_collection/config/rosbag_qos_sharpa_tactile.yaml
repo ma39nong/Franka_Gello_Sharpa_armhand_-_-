@@ -1,0 +1,193 @@
+# Per-topic subscriptions for the tactile-enabled rosbag recorder.
+# Keep camera/robot command streams reliable while matching Sharpa sensor-data
+# publishers with best_effort. Do not classify by ROS message type: both camera
+# frames and tactile deformation use sensor_msgs/msg/Image.
+
+# FR3 actions, status, and state.
+/teleop/validated_arm_commands:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/teleop/arm_command_status:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/left/franka/joint_states:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/right/franka/joint_states:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+
+# Sharpa commands are reliable; Sharpa state publishers use sensor-data QoS.
+/sharpa/left/command:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/sharpa/right/command:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/sharpa/left/joint_states:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/right/joint_states:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+
+# Orbbec images and calibration.
+/cam0/color/image_raw:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/cam0/depth/image_raw:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/cam1/color/image_raw:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/cam2/color/image_raw:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/cam0/color/camera_info:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/cam0/depth/camera_info:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/cam1/color/camera_info:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+/cam2/color/camera_info:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+
+# Sharpa tactile publishers use sensor-data QoS.
+/sharpa/left/tactile/thumb/wrench:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/left/tactile/thumb/deformation:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/left/tactile/index/wrench:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/left/tactile/index/deformation:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/left/tactile/middle/wrench:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/left/tactile/middle/deformation:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/left/tactile/ring/wrench:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/left/tactile/ring/deformation:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/left/tactile/pinky/wrench:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/left/tactile/pinky/deformation:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/right/tactile/thumb/wrench:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/right/tactile/thumb/deformation:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/right/tactile/index/wrench:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/right/tactile/index/deformation:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/right/tactile/middle/wrench:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/right/tactile/middle/deformation:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/right/tactile/ring/wrench:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/right/tactile/ring/deformation:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/right/tactile/pinky/wrench:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+/sharpa/right/tactile/pinky/deformation:
+  history: keep_last
+  depth: 10
+  reliability: best_effort
+  durability: volatile
+

@@ -32,7 +32,7 @@ from apps.operator_gui.operator_gui import (
 def test_shortcut_bindings_match_the_workcell_layout():
     assert PEDAL_BINDINGS == {
         "A": ("toggle_hold", "arm", "left"),
-        "Q": ("toggle_hold", "arm", "right"),
+        "C": ("toggle_hold", "arm", "right"),
     }
     assert COLLECTION_SHORTCUTS == {"L": "toggle_recording", "Space": "mark_milestone"}
     assert not set(PEDAL_BINDINGS) & set(COLLECTION_SHORTCUTS)

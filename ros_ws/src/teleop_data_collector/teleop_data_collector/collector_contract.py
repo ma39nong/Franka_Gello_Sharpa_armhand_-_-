@@ -13,6 +13,12 @@ from teleop_core.contract import (
 
 
 SUPPORTED_TELEOPERATORS = DATA_TELEOPERATORS
+SHARPA_TOPICS = {
+    "/sharpa/left/command",
+    "/sharpa/right/command",
+    "/sharpa/left/joint_states",
+    "/sharpa/right/joint_states",
+}
 
 
 @dataclass(frozen=True)
@@ -83,11 +89,25 @@ def validate_recording_contract(config: Mapping[str, Any]) -> None:
         raise ValueError(
             "recording contract is missing the safety-gateway output"
         )
-    for status_topic in (COMMAND_STATUS_TOPIC, WUJI_TELEMETRY_STATUS_TOPIC):
-        if status_topic not in required_topics:
-            raise ValueError(
-                f"recording contract is missing HOLD status topic {status_topic}"
-            )
+    if COMMAND_STATUS_TOPIC not in required_topics:
+        raise ValueError(
+            f"recording contract is missing HOLD status topic {COMMAND_STATUS_TOPIC}"
+        )
+    wuji_topics = {
+        topic for topic in required_topics if topic.startswith("/teleop/wuji/")
+    }
+    if wuji_topics and WUJI_TELEMETRY_STATUS_TOPIC not in required_topics:
+        raise ValueError(
+            "recording contract is missing HOLD status topic "
+            f"{WUJI_TELEMETRY_STATUS_TOPIC}"
+        )
+    sharpa_topics = required_topics.intersection(SHARPA_TOPICS)
+    if sharpa_topics and sharpa_topics != SHARPA_TOPICS:
+        missing = sorted(SHARPA_TOPICS.difference(sharpa_topics))
+        raise ValueError(
+            "Sharpa recording contract must include both command and state "
+            f"topics for both hands; missing {missing}"
+        )
     forbidden = {"/teleop/arm_commands", "/target_robot/joint_commands"}
     if forbidden & {topic.topic for topic in topics}:
         raise ValueError("recording contract includes a pre-gateway/control-bus topic")

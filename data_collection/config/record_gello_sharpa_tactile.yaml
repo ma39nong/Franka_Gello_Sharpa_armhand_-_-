@@ -1,0 +1,214 @@
+teleop_data_collector:
+  ros__parameters:
+    bag_contract_version: 1
+    teleoperator: gello
+    workcell_id: gello-dual-fr3-sharpa-tactile
+    workcell_config_hash: REPLACE_AT_LAUNCH
+    control_config_id: gello-incremental-safety-gateway-v1
+    timestamp_policy: preserve_source_header_and_bag_receive_time
+    trim_start_sec: 1.0
+    trim_end_sec: 0.2
+    calibration_ids:
+      left_arm: config/modes/gello.yaml
+      right_arm: config/modes/gello.yaml
+      hands: manus_sharpa_record/record.py
+      cameras: data_collection/config/cameras.yaml
+    device_identities:
+      workcell: config/workcell/current.yaml
+      cam0_serial: REPLACE_AT_LAUNCH
+      cam1_serial: REPLACE_AT_LAUNCH
+      cam2_serial: REPLACE_AT_LAUNCH
+      cam0_semantic: REPLACE_AT_LAUNCH
+      cam1_semantic: REPLACE_AT_LAUNCH
+      cam2_semantic: REPLACE_AT_LAUNCH
+    data_root: /collection_data/bags/gello_sharpa_tactile
+    bag_prefix: episode
+    control_bind_host: 127.0.0.1
+    control_port: 5592
+    bag_stop_timeout_sec: 30.0
+    rosbag_record_args:
+      - --storage
+      - sqlite3
+      - --max-cache-size
+      - "268435456"
+      - --qos-profile-overrides-path
+      - /workspace/franka_upper_body_teleop/data_collection/config/rosbag_qos_sharpa_tactile.yaml
+    topics:
+      validated_arm_action:
+        topic: /teleop/validated_arm_commands
+        type: sensor_msgs/msg/JointState
+        min_frequency_hz: 5.0
+        max_gap_ms: 150.0
+      arm_command_status:
+        topic: /teleop/arm_command_status
+        type: teleop_interfaces/msg/ArmCommandStatus
+        min_frequency_hz: 5.0
+        max_gap_ms: 150.0
+      left_arm_state:
+        topic: /left/franka/joint_states
+        type: sensor_msgs/msg/JointState
+        min_frequency_hz: 10.0
+        max_gap_ms: 150.0
+      right_arm_state:
+        topic: /right/franka/joint_states
+        type: sensor_msgs/msg/JointState
+        min_frequency_hz: 10.0
+        max_gap_ms: 150.0
+      left_hand_action:
+        topic: /sharpa/left/command
+        type: sensor_msgs/msg/JointState
+        min_frequency_hz: 10.0
+        max_gap_ms: 150.0
+      right_hand_action:
+        topic: /sharpa/right/command
+        type: sensor_msgs/msg/JointState
+        min_frequency_hz: 10.0
+        max_gap_ms: 150.0
+      left_hand_state:
+        topic: /sharpa/left/joint_states
+        type: sensor_msgs/msg/JointState
+        min_frequency_hz: 10.0
+        max_gap_ms: 150.0
+      right_hand_state:
+        topic: /sharpa/right/joint_states
+        type: sensor_msgs/msg/JointState
+        min_frequency_hz: 10.0
+        max_gap_ms: 150.0
+      cam0:
+        topic: /cam0/color/image_raw
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 150.0
+      cam0_depth:
+        topic: /cam0/depth/image_raw
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 150.0
+      cam1:
+        topic: /cam1/color/image_raw
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 25.0
+        max_gap_ms: 150.0
+      cam2:
+        topic: /cam2/color/image_raw
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 25.0
+        max_gap_ms: 150.0
+
+      left_tactile_thumb_wrench:
+        topic: /sharpa/left/tactile/thumb/wrench
+        type: geometry_msgs/msg/WrenchStamped
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      left_tactile_thumb_deformation:
+        topic: /sharpa/left/tactile/thumb/deformation
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      left_tactile_index_wrench:
+        topic: /sharpa/left/tactile/index/wrench
+        type: geometry_msgs/msg/WrenchStamped
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      left_tactile_index_deformation:
+        topic: /sharpa/left/tactile/index/deformation
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      left_tactile_middle_wrench:
+        topic: /sharpa/left/tactile/middle/wrench
+        type: geometry_msgs/msg/WrenchStamped
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      left_tactile_middle_deformation:
+        topic: /sharpa/left/tactile/middle/deformation
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      left_tactile_ring_wrench:
+        topic: /sharpa/left/tactile/ring/wrench
+        type: geometry_msgs/msg/WrenchStamped
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      left_tactile_ring_deformation:
+        topic: /sharpa/left/tactile/ring/deformation
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      left_tactile_pinky_wrench:
+        topic: /sharpa/left/tactile/pinky/wrench
+        type: geometry_msgs/msg/WrenchStamped
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      left_tactile_pinky_deformation:
+        topic: /sharpa/left/tactile/pinky/deformation
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      right_tactile_thumb_wrench:
+        topic: /sharpa/right/tactile/thumb/wrench
+        type: geometry_msgs/msg/WrenchStamped
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      right_tactile_thumb_deformation:
+        topic: /sharpa/right/tactile/thumb/deformation
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      right_tactile_index_wrench:
+        topic: /sharpa/right/tactile/index/wrench
+        type: geometry_msgs/msg/WrenchStamped
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      right_tactile_index_deformation:
+        topic: /sharpa/right/tactile/index/deformation
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      right_tactile_middle_wrench:
+        topic: /sharpa/right/tactile/middle/wrench
+        type: geometry_msgs/msg/WrenchStamped
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      right_tactile_middle_deformation:
+        topic: /sharpa/right/tactile/middle/deformation
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      right_tactile_ring_wrench:
+        topic: /sharpa/right/tactile/ring/wrench
+        type: geometry_msgs/msg/WrenchStamped
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      right_tactile_ring_deformation:
+        topic: /sharpa/right/tactile/ring/deformation
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      right_tactile_pinky_wrench:
+        topic: /sharpa/right/tactile/pinky/wrench
+        type: geometry_msgs/msg/WrenchStamped
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+      right_tactile_pinky_deformation:
+        topic: /sharpa/right/tactile/pinky/deformation
+        type: sensor_msgs/msg/Image
+        min_frequency_hz: 18.0
+        max_gap_ms: 500.0
+    static_topics:
+      cam0_info:
+        topic: /cam0/color/camera_info
+        type: sensor_msgs/msg/CameraInfo
+        required: false
+      cam0_depth_info:
+        topic: /cam0/depth/camera_info
+        type: sensor_msgs/msg/CameraInfo
+        required: false
+      cam1_info:
+        topic: /cam1/color/camera_info
+        type: sensor_msgs/msg/CameraInfo
+        required: false
+      cam2_info:
+        topic: /cam2/color/camera_info
+        type: sensor_msgs/msg/CameraInfo
+        required: false

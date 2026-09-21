@@ -4,7 +4,7 @@ LEFT:
   controller_cpus: "8-9"
   fake_sensor_commands: "false"
   namespace: "left"
-  robot_ip: "172.16.0.2"
+  robot_ip: "172.16.26.5"
   urdf_file: "fr3/fr3.urdf.xacro"
   use_fake_hardware: "false"
 
@@ -14,6 +14,6 @@ RIGHT:
   controller_cpus: "12-13"
   fake_sensor_commands: "false"
   namespace: "right"
-  robot_ip: "172.16.1.2"
+  robot_ip: "172.16.26.4"
   urdf_file: "fr3/fr3.urdf.xacro"
   use_fake_hardware: "false"

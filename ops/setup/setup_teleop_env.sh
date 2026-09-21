@@ -20,3 +20,7 @@ conda run --name "${environment}" python -m pip install \
   -e "${repo}/adapters/pico" \
   -e "${repo}/adapters/vive" \
   -e "${repo}/adapters/manus/python"
+
+# The Operator GUI is deliberately launched from Conda base so it remains
+# independent of ROS/native numerical libraries in the teleoperation env.
+conda install --name base --channel conda-forge --yes pyside6

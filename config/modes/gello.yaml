@@ -2,10 +2,10 @@
 # ops/diagnostics/check_gello_ports.py after reconnecting hardware; never infer sides
 # from ttyACM enumeration order.
 left:
-  port: /dev/serial/by-id/usb-ROBOTIS_OpenRB-150_4303A73A5157375037202020FF100616-if00
-  expected_serial: 4303A73A5157375037202020FF100616
-  # 2026-08-17 replacement OpenRB assembly physical-direction verification.
-  direction_correction: [1, 1, 1, 1, 1, 1, 1]
+  port: /dev/serial/by-id/usb-ROBOTIS_OpenRB-150_3523CE1C5157375037202020FF102718-if00
+  expected_serial: 3523CE1C5157375037202020FF102718
+  # 2026-09-16 operator-reported left J2/J6 inversions vs GELLO.
+  direction_correction: [1, 1, 1, 1, 1, -1, 1]
   # FR3 joint displacement per radian of calibrated GELLO displacement.
   joint_sensitivity: [0.7, 0.7, 1.0, 1.0, 1.0, 1.0, 1.0]
   # Per-engagement relative travel caps [rad], one per joint.
@@ -13,10 +13,10 @@ left:
   # Keep 1% of each physical span clear at both joint-limit ends.
   joint_limit_margin: [0.0580148003, 0.0367218003, 0.0580148003, 0.0296008293, 0.0575260670, 0.0418181070, 0.0610166670]
 right:
-  port: /dev/serial/by-id/usb-ROBOTIS_OpenRB-150_17E84ADC5157375037202020FF10131E-if00
-  expected_serial: 17E84ADC5157375037202020FF10131E
-  # 2026-09-02 operator-reported right J6 inversion vs GELLO.
-  direction_correction: [1, 1, 1, 1, 1, 1, 1]
+  port: /dev/serial/by-id/usb-ROBOTIS_OpenRB-150_CBB557875157375037202020FF0D3429-if00
+  expected_serial: CBB557875157375037202020FF0D3429
+  # 2026-09-16 operator-reported right J1/J7 inversions vs GELLO.
+  direction_correction: [1, 1, 1, 1, 1, -1, 1]
   # FR3 joint displacement per radian of calibrated GELLO displacement.
   joint_sensitivity: [0.7, 0.7, 1.0, 1.0, 1.0, 1.0, 1.0]
   # Full spans of the FR3 limits used by the safety gateway. The mapper still

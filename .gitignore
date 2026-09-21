@@ -10,5 +10,8 @@ log/
 Log/
 /log.txt
 docker/.env
+docker/.env.before-install.*
+portable_deps/*
+!portable_deps/README.md
 data/
 data_collection/config/cameras.yaml

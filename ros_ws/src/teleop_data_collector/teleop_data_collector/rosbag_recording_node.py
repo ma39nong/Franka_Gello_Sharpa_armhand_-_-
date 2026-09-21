@@ -441,12 +441,15 @@ def main(args=None):
                     controller.reconcile_exited_recorder()
                 time.sleep(0.05)
     except KeyboardInterrupt:
-        if recorder.active:
-            node.get_logger().info("Shutting down. Stopping active rosbag recording...")
+        node.get_logger().info("Shutdown requested.")
+    finally:
+        if recorder.current_bag_dir is not None:
+            node.get_logger().info(
+                "Shutting down. Stopping active rosbag recording..."
+            )
             controller.stop_if_present(interrupted=True)
         else:
             node.get_logger().info("Shutting down.")
-    finally:
         control_server.shutdown()
         control_server.server_close()
         node.destroy_node()
@@ -491,7 +494,7 @@ def _wait_for_required_topics(
     that the collector process itself has entered its keyboard loop.
     """
     node.get_logger().info(
-        "WAITING: 正在等待机械臂、Wuji 手和相机数据源准备完成..."
+        "WAITING: 正在等待配置的机械臂、手和相机数据源准备完成..."
     )
     ready_since: float | None = None
     last_status_at = float("-inf")
