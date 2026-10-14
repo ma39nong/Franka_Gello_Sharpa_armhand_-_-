@@ -1,0 +1,9 @@
+# Explicit OpenPI gateway profile; base compose and teleop defaults stay unchanged.
+services:
+  teleop-control:
+    command:
+      - ros2
+      - launch
+      - teleop_core
+      - control.launch.py
+      - config:=/workspace/franka_upper_body_teleop/config/modes/openpi_control.yaml

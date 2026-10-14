@@ -232,7 +232,7 @@ class OperatorWindow(QMainWindow):
         if self.full_config:
             from apps.operator_gui.hand_client import HandClient
             self.hand_client=HandClient(self.full_config['control_port'],self.full_config['token'],self,
-                normal_forwarding=self.full_config.get('source')=='litchibot' and self.full_config.get('mode') in ('normal','fake'))
+                normal_forwarding=self.full_config.get('mode') in ('normal','fake'))
             self.hand_client.status.connect(self._apply_hand_status)
             self.hand_client.event.connect(self._hand_event)
             if self.full_config['mode']=='supervised_hardware_validation':

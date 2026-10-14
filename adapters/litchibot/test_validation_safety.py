@@ -58,12 +58,12 @@ def test_historical_jump_rejected_before_slew_and_dropped_inbox_frames():
     assert 'discontinuity' in inbox.safety_fault and inbox.take()=={}
 
 
-def warm_latch():
-    p=permit();l=MotionLatch(p,1.0)
+def warm_latch(source='litchibot'):
+    p=permit();l=MotionLatch(p,1.0,source=source)
     for sequence in range(1,31):
         now=1+sequence*.03
         for s in ('left','right'):
-            assert not l.command(s,JOINT_NAMES,[0.0]*22,10**9,10**9,f'litchibot:{s}:session:{sequence}',now,[0.0]*22)
+            assert not l.command(s,JOINT_NAMES,[0.0]*22,10**9,10**9,f'{source}:{s}:session:{sequence}',now,[0.0]*22)
     assert l.phase=='READY'
     return l,p,now
 
@@ -121,6 +121,44 @@ def test_small_range_and_first_hardware_acquisition_are_checked():
     l.last['left']=(np.array([0.09]*22),('session',30),now)
     with pytest.raises(ValueError,match='excursion'):
         l.command('left',JOINT_NAMES,[0.16]*22,10**9,10**9,'litchibot:left:session:31',now,[0.0]*22)
+
+
+def test_openpi_slow_motion_can_exceed_acceptance_baseline():
+    """Pure gate simulation: no ROS node, SDK, or real motion."""
+    l,p,start=warm_latch(source='openpi')
+    measured={s:np.zeros(22) for s in ('left','right')}
+    for step in range(1,121):
+        now=start+step*.05
+        l.heartbeat({'token':p['session_token'],'hold':True,'sequence':step,
+                     'monotonic_ns':int(now*1e9)},now)
+        q=np.zeros(22);q[5]=step*.005
+        for side in ('left','right'):
+            assert l.command(side,JOINT_NAMES,q,int(now*1e9),int(now*1e9),
+                             f'openpi:{side}:session:{30+step}',now,measured[side])
+            measured[side]=q.copy()
+    assert l.phase=='ARMED'
+    assert l.commanded['left'][0][5]==pytest.approx(.6)
+    assert l.baseline['left'][5]==0  # No baseline reset to bypass the bound.
+
+
+def test_openpi_first_hardware_command_still_requires_slew():
+    l,p,now=warm_latch(source='openpi')
+    l.heartbeat({'token':p['session_token'],'hold':True,'sequence':1,
+                 'monotonic_ns':int(now*1e9)},now)
+    q=np.zeros(22);q[5]=.6
+    # Keep the raw step small so the independent slew check is exercised.
+    l.last['left']=(q.copy(),('session',30),now)
+    with pytest.raises(ValueError,match='slew'):
+        l.command('left',JOINT_NAMES,q,int(now*1e9),int(now*1e9),
+                  'openpi:left:session:31',now,np.zeros(22))
+
+
+def test_openpi_unarmed_acquisition_bound_is_unchanged():
+    l=MotionLatch(permit(),1.0,source='openpi')
+    q=np.zeros(22);q[5]=.16
+    with pytest.raises(ValueError,match='Acquisition target'):
+        l.command('left',JOINT_NAMES,q,10**9,10**9,
+                  'openpi:left:session:1',1.0,np.zeros(22))
 
 
 def test_validation_launch_selects_one_guarded_process_and_no_plain_driver(tmp_path):

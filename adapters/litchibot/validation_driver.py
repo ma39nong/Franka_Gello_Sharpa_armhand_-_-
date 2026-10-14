@@ -179,6 +179,16 @@ def main(argv=None):
                         self.full=FullHandRuntime(self,config)
                         for side,hand in self._hands.items():
                             hand.stop();self.needs_enable.add(side.value)
+                # OpenPI's persistent acquisition owner is started immediately
+                # after this guarded process.  Give ROS discovery a short,
+                # bounded window to establish its single source publisher;
+                # after the window, a missing or duplicate source remains a
+                # latched safety fault.
+                self.source_start_deadline = (
+                    time.monotonic() + 8.0
+                    if config and config.get('source') == 'openpi' and not normal
+                    else 0.0
+                )
                 self.guard_timer=self.create_timer(0.01,self.service_guard)
             except Exception:
                 self.destroy_node();raise
@@ -252,12 +262,19 @@ def main(argv=None):
                     if self.latch.phase=='ARMED' and len(pubs)!=1:
                         raise ValueError('Source bridge disappeared')
                     if self.full:
-                        input_topic=f'/teleop/sharpa/{side}/'+('source' if config['source']=='litchibot' else 'target')
-                        expected='litchibot_command_bridge' if config['source']=='litchibot' else 'manus_sharpa_retarget'
+                        input_topic=f'/teleop/sharpa/{side}/'+('source' if config['source']=='litchibot' else 'openpi_target' if config['source']=='openpi' else 'target')
+                        expected=('litchibot_command_bridge' if config['source']=='litchibot' else
+                                  'fr3_sharpa_runtime' if config['source']=='openpi' else 'manus_sharpa_retarget')
                         sources=self.get_publishers_info_by_topic(input_topic)
                         if len(sources)>1 or any(e.node_name!=expected for e in sources):
                             raise ValueError('Non-unique/unexpected hand target publisher')
-                        if self.latch.phase in ('READY','ARMED','RECOVERING') and len(sources)!=1:
+                        startup_wait = (
+                            len(sources) == 0
+                            and self.latch.phase == 'READY'
+                            and time.monotonic() < self.source_start_deadline
+                        )
+                        if (self.latch.phase in ('READY','ARMED','RECOVERING')
+                                and len(sources)!=1 and not startup_wait):
                             raise ValueError('Hand source publisher disappeared')
 
                 if sum(n=='sharpa_driver' for n,ns in self.get_node_names_and_namespaces())!=1:
@@ -335,6 +352,7 @@ def main(argv=None):
             if self._last_command_at[side]<=previous:raise ValueError('Original sender rejected command')
             self.validation_send_count+=1
             return True
+
 
     node=None
     try:

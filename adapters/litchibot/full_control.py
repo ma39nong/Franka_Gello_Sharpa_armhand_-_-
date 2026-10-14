@@ -15,8 +15,10 @@ def load_full_config(path):
     if st.st_uid!=os.getuid() or st.st_mode&0o077:
         raise ValueError('Private full-teleop configuration required')
     data=json.loads(p.read_text())
-    if data.get('source') not in ('manus','litchibot') or data.get('mode') not in ('fake','normal','supervised_hardware_validation'):
+    if data.get('source') not in ('manus','litchibot','openpi') or data.get('mode') not in ('fake','normal','supervised_hardware_validation'):
         raise ValueError('Invalid full-teleop source/mode')
+    if data['source']=='openpi' and data['mode']=='normal':
+        raise ValueError('OpenPI requires fake or supervised hardware validation mode')
     if not isinstance(data.get('control_port'),int) or not 1024<=data['control_port']<=65535:
         raise ValueError('Valid local hand control port required')
     if type(data.get('fake_input',False)) is not bool or (data.get('fake_input') and (data['mode']!='fake' or data['source']!='manus')):

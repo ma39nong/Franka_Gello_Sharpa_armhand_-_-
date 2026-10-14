@@ -42,7 +42,10 @@ class FullHandRuntime:
         for side in ('left','right'):
             self.services.append(node.create_service(SetBool,f'/teleop/sharpa/{side}/enable',
                 lambda req,resp,s=side:self.enable_service(s,req,resp)))
-            if config['source']=='litchibot':
+            if config['source']=='openpi':
+                self.subscriptions.append(node.create_subscription(JointState,f'/teleop/sharpa/{side}/openpi_target',
+                    lambda msg,s=side:self.openpi(s,msg),10))
+            elif config['source']=='litchibot':
                 self.subscriptions.append(node.create_subscription(String,f'/teleop/sharpa/{side}/source',
                     # Normal teleop executes the latest target, not a playback FIFO.
                     # Retain strict/history paths unchanged for other modes.
@@ -211,6 +214,33 @@ class FullHandRuntime:
                 'joint_names':list(message.name),'positions_rad':list(message.position),'valid_glove_joint_count':25,
                 'valid_target_mask':[True]*22,'sequence':self.sequence[side],'session_id':self.config['token'][:16],
                 'source_received_monotonic_ns':now_ns-(ros_now-stamp)}
+            self.process(side,packet,stamp)
+        except Exception as error:self.node.stop_validation(error)
+
+    def openpi(self,side,message):
+        """Guarded 22D policy target; public /sharpa/*/command is never an input."""
+        try:
+            stamp=self.stamp(message)
+            now_ros=self.node.get_clock().now().nanoseconds
+            age=now_ros-stamp
+            if not 0<=age<=200_000_000:
+                raise ValueError('Stale/future OpenPI target')
+            fields=message.header.frame_id.split(':')
+            if len(fields)!=4 or fields[:2]!=['openpi',side] or not fields[2] or not fields[3].isdigit():
+                raise ValueError('Invalid OpenPI side/session/sequence')
+            if tuple(message.name)!=JOINT_NAMES:
+                raise ValueError('OpenPI target joint order mismatch')
+            # The existing Manus 22D continuity entry checks raw target limits,
+            # sequence, session, timestamp and per-frame discontinuity.
+            now_ns=time.monotonic_ns()
+            if not self.raw.observe_ros_target(side,list(message.name),list(message.position),stamp,
+                                               now_ros,int(fields[3]),fields[2],now_ns):
+                return
+            packet={'schema':'litchibot.sharpa_target.v1','dry_run':True,'engaged':True,
+                    'side':side,'joint_names':list(message.name),'positions_rad':list(message.position),
+                    'valid_glove_joint_count':22,'valid_target_mask':[True]*22,
+                    'sequence':int(fields[3]),'session_id':fields[2],
+                    'source_received_monotonic_ns':now_ns-age}
             self.process(side,packet,stamp)
         except Exception as error:self.node.stop_validation(error)
 

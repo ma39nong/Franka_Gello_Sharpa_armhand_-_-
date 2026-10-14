@@ -247,7 +247,10 @@ class MotionLatch:
                 raise ValueError('ROS single-frame discontinuity')
         forwarding=self.phase=='ARMED' and (not self.gui_controlled or self.requested[side])
         if forwarding:
-            if self.validation_only and np.abs(q-self.baseline[side]).max()>EXCURSION_RAD:
+            # OpenPI task preparation may travel beyond the acceptance baseline.
+            # Keep acquisition, per-frame continuity, native joint limits and
+            # command slew checks; other acceptance sources retain this bound.
+            if self.validation_only and self.source!='openpi' and np.abs(q-self.baseline[side]).max()>EXCURSION_RAD:
                 raise ValueError('Acceptance excursion exceeds 0.15 rad')
             actual = self.commanded.get(side)
             base,dt = (actual[0],min(0.05,now-actual[1])) if actual else (measured,1/30)
