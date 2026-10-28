@@ -24,7 +24,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from PySide6.QtCore import QSettings, Qt, QTimer, Signal, QEvent, QUrl
-from PySide6.QtGui import QDesktopServices, QAction, QFontDatabase, QKeySequence, QShortcut
+from PySide6.QtGui import QDesktopServices, QAction, QFontDatabase, QKeySequence, QShortcut, QPixmap
 from PySide6.QtNetwork import QAbstractSocket, QTcpSocket
 from PySide6.QtWidgets import (
     QApplication,
@@ -42,6 +42,8 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QInputDialog,
     QMainWindow,
+    QMenu,
+    QToolButton,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
@@ -64,8 +66,7 @@ PEDAL_BINDINGS = {
     "B": ("home", "arm", "both"),
     "C": ("toggle_hold", "arm", "right"),
 }
-COLLECTION_SHORTCUTS = {"L": "toggle_recording", "Space": "mark_milestone"}
-PRESET_KEYS = ("W", "E")
+COLLECTION_SHORTCUTS = {"L": "toggle_recording"}
 ARM_HOLD_KEY_HINTS = {"left": "A", "right": "C"}
 
 
@@ -211,7 +212,6 @@ class OperatorWindow(QMainWindow):
         self.connection_dialog: ConnectionDialog | None = None
         self.disconnect_message: QMessageBox | None = None
         self.capture_dialogs: dict[str, QMessageBox] = {}
-        self.ready_capture_dialog: QMessageBox | None = None
         self.collection_state = "OFFLINE"
         self.collection_next_request_id = 1
         self.collection_pending: dict[int, str] = {}
@@ -269,11 +269,12 @@ class OperatorWindow(QMainWindow):
 
     # ------------------------------------------------------------------ ui
     def _build_ui(self) -> None:
-        connection_menu = self.menuBar().addMenu("&Connection")
+        connection_menu = QMenu("Connection", self)
         self.connect_action = QAction("Connect...", self)
         self.connect_action.setShortcut("Ctrl+K")
         self.connect_action.triggered.connect(self._open_connection_dialog)
         connection_menu.addAction(self.connect_action)
+        self.addAction(self.connect_action)
         if self.full_config:
             self.arm_reconnect_action = QAction("重新连接机械臂（修复连接 / Exec / FCI 后）", self)
             self.arm_reconnect_action.triggered.connect(self._reconnect_arms)
@@ -283,12 +284,23 @@ class OperatorWindow(QMainWindow):
         quit_action.setShortcut("Ctrl+Q")
         quit_action.triggered.connect(self.close)
         connection_menu.addAction(quit_action)
+        self.addAction(quit_action)
 
         root = QWidget(self)
         layout = QVBoxLayout(root)
 
-        self.system_status_heading = QLabel("System status")
-        layout.addWidget(self.system_status_heading)
+        self.system_status_heading = QLabel("系统状态")
+        self.system_status_heading.setStyleSheet("font-weight: bold;")
+        status_heading_row = QHBoxLayout()
+        status_heading_row.addWidget(self.system_status_heading)
+        status_heading_row.addStretch()
+        self.connection_button = QToolButton()
+        self.connection_button.setText("Connection")
+        self.connection_button.setAutoRaise(True)
+        self.connection_button.setPopupMode(QToolButton.InstantPopup)
+        self.connection_button.setMenu(connection_menu)
+        status_heading_row.addWidget(self.connection_button)
+        layout.addLayout(status_heading_row)
         self.status_label = QPlainTextEdit("-")
         self.status_label.setReadOnly(True)
         self.status_label.setFixedHeight(100)
@@ -297,10 +309,14 @@ class OperatorWindow(QMainWindow):
         )
         layout.addWidget(self.status_label)
 
-        collection_box = QGroupBox("数据采集（独立采集终端）")
-        collection_box.setFixedHeight(210)
-        collection_box.setStyleSheet("QGroupBox { background-color: white; }")
+        collection_heading = QLabel("数据采集（独立采集终端）")
+        layout.addWidget(collection_heading)
+        collection_box = QFrame()
+        collection_box.setFixedHeight(190)
+        collection_box.setStyleSheet("QFrame { background-color: white; }")
         collection_layout = QHBoxLayout(collection_box)
+        margins = collection_layout.contentsMargins()
+        collection_layout.setContentsMargins(margins.left(), margins.top() + 6, margins.right(), margins.bottom())
         self.collection_status_label = QLabel(self._collection_offline_text())
         self.collection_status_label.setMinimumWidth(330)
         self.collection_status_label.setWordWrap(True)
@@ -314,9 +330,6 @@ class OperatorWindow(QMainWindow):
         self.collection_record_button.clicked.connect(
             self._toggle_collection_recording
         )
-        self.collection_milestone_button = QPushButton("中间完成标记 (Space)")
-        self.collection_milestone_button.setFocusPolicy(Qt.NoFocus)
-        self.collection_milestone_button.clicked.connect(self._mark_collection_milestone)
         self.collection_discard_button = QPushButton("丢弃最近一次")
         self.collection_discard_button.setFocusPolicy(Qt.NoFocus)
         self.collection_discard_button.setStyleSheet("color: #a35b00;")
@@ -328,7 +341,6 @@ class OperatorWindow(QMainWindow):
         self.collection_quality_button.clicked.connect(self._open_quality_dialog)
         for button in (
             self.collection_record_button,
-            self.collection_milestone_button,
             self.collection_discard_button,
             self.collection_quality_button,
         ):
@@ -336,7 +348,10 @@ class OperatorWindow(QMainWindow):
             collection_layout.addWidget(button, alignment=Qt.AlignBottom)
         layout.addWidget(collection_box)
 
-        sides_row = QHBoxLayout()
+        layout.addSpacing(6)
+        controls_grid = QGridLayout()
+        controls_grid.setColumnStretch(0, 1)
+        controls_grid.setColumnStretch(1, 1)
         self.arm_engage_buttons: dict[str, QPushButton] = {}
         self.arm_hold_buttons: dict[str, QPushButton] = {}
         self.hand_engage_buttons: dict[str, QPushButton] = {}
@@ -404,13 +419,12 @@ class OperatorWindow(QMainWindow):
             self.capture_home_buttons[side] = capture_home
             self.action_buttons = getattr(self, "action_buttons", [])
             self.action_buttons.append(capture_home)
-            grid.addWidget(capture_home, 3, 0)
+            grid.addWidget(capture_home, 4, 0)
 
             grid.addWidget(
-                self._button("Open hand", "open_hand", {"side": side}), 4, 0
+                self._button("Open hand", "open_hand", {"side": side}), 3, 0
             )
-            sides_row.addWidget(box)
-        layout.addLayout(sides_row)
+            controls_grid.addWidget(box, 0, SIDES.index(side))
 
         actions = QHBoxLayout()
         disengage_all = self._button("DISENGAGE ALL", "disengage_all")
@@ -419,10 +433,9 @@ class OperatorWindow(QMainWindow):
         disengage_all.setStyleSheet(
             "background-color: #a83232; color: white; font-weight: bold;"
         )
-        actions.addWidget(disengage_all, stretch=2)
-        actions.addWidget(
-            self._button("Open both hands", "open_hand", {"side": "both"})
-        )
+        controls_grid.addWidget(disengage_all, 1, 0)
+        open_both = self._button("Open both hands", "open_hand", {"side": "both"})
+        actions.addWidget(open_both, stretch=1)
         self.task_selector = QComboBox()
         self.task_selector.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
         self.task_selector.setMinimumContentsLength(6)
@@ -434,12 +447,13 @@ class OperatorWindow(QMainWindow):
         self.task_selector.currentIndexChanged.connect(
             lambda: self.settings.setValue("operator_task", self._selected_task())
         )
-        self.task_selector.setToolTip("Select which task Home pose and trajectory to use")
+        self.task_selector.setToolTip("Select which task Home pose to use")
         self.task_selector.addItem("＋ 新增任务…", "__add_task__")
         self.task_selector.addItem("－ 删除当前任务…", "__delete_task__")
         self.task_selector.activated.connect(self._task_action_selected)
+        self._center_task_labels()
         self.current_task = str(self.task_selector.currentData())
-        actions.addWidget(self.task_selector)
+        actions.addWidget(self.task_selector, stretch=1)
         home_both = QPushButton("Home both arms")
         self.home_both_button = home_both
         home_both.setFocusPolicy(Qt.NoFocus)
@@ -448,74 +462,36 @@ class OperatorWindow(QMainWindow):
         )
         self.action_buttons.append(home_both)
         home_both.setToolTip("B: Home both arms; retain arm permits and stay in Hold after arrival")
-        actions.addWidget(home_both)
-        layout.addLayout(actions)
+        actions.addWidget(home_both, stretch=1)
+        for control in (open_both, self.task_selector, home_both):
+            control.setFixedHeight(42)
+            actions.setAlignment(control, Qt.AlignVCenter)
+            font = control.font()
+            font.setPointSizeF(font.pointSizeF() + 2)
+            control.setFont(font)
+        controls_grid.addLayout(actions, 1, 1)
+        layout.addLayout(controls_grid)
 
-        ready_box = QGroupBox("Shared Ready and task Home trajectory")
-        ready_layout = QHBoxLayout(ready_box)
-        self.capture_ready_button = QPushButton("Record both arms as Ready")
-        self.capture_ready_button.setFocusPolicy(Qt.NoFocus)
-        self.capture_ready_button.clicked.connect(self._confirm_capture_ready)
-        self.action_buttons.append(self.capture_ready_button)
-        ready_layout.addWidget(self.capture_ready_button)
-        self.move_ready_button=self._button("Move both arms to Ready", "move_ready")
-        ready_layout.addWidget(self.move_ready_button)
-        self.ready_to_home_button = QPushButton("Ready to Home")
-        self.ready_to_home_button.setFocusPolicy(Qt.NoFocus)
-        self.ready_to_home_button.clicked.connect(
-            lambda: self._send(
-                "ready_to_home", {"task": self._selected_task()}
-            )
-        )
-        self.ready_to_home_button.setToolTip(
-            "Execute the selected task's absolute dual-arm trajectory only when "
-            "both arms are already within 0.05 rad of Ready."
-        )
-        self.action_buttons.append(self.ready_to_home_button)
-        ready_layout.addWidget(self.ready_to_home_button)
-        layout.addWidget(ready_box)
-
-        preset_box = QGroupBox("Preset relative actions — 65% speed")
-        preset_layout = QHBoxLayout(preset_box)
-        self.preset_buttons: dict[str, QPushButton] = {}
-        preset_labels = {
-            "q": "Preset 1: left kuai1",
-            "w": "Preset 2: unconfigured (W)",
-            "e": "Preset 3: unconfigured (E)",
-        }
-        for key in ("q", "w", "e"):
-            button = self._button(
-                preset_labels[key], "run_preset", {"key": key}
-            )
-            button.setMinimumHeight(48)
-            button.setToolTip(
-                "Rebase the saved relative tool path at the current measured "
-                "end-effector pose, precheck every IK frame, then execute once."
-            )
-            self.preset_buttons[key] = button
-            preset_layout.addWidget(button)
-        stop_action = self._button("STOP PRESET", "stop_action")
-        stop_action.setMinimumHeight(48)
-        stop_action.setStyleSheet(
-            "background-color: #d47b22; color: white; font-weight: bold;"
-        )
-        stop_action.setToolTip("Interrupt preset execution and re-anchor GELLO")
-        preset_layout.addWidget(stop_action)
-        layout.addWidget(preset_box)
-
-        shortcut_hint = QLabel(
-            "Shortcuts: L 开始/停止录制 · Space 中间完成标记  |  "
-            "A left Hold · B Home both arms · C right Hold"
-        )
-        shortcut_hint.setStyleSheet("color: #666;")
-        layout.addWidget(shortcut_hint)
-
-        layout.addWidget(QLabel("Event log"))
+        log_heading_row = QHBoxLayout()
+        self.event_log_heading = QLabel("事件日志")
+        log_heading_row.addWidget(self.event_log_heading)
+        self.log_toggle = QToolButton()
+        self.log_toggle.setCheckable(True)
+        self.log_toggle.setChecked(True)
+        self.log_toggle.setAutoRaise(True)
+        self.log_toggle.setArrowType(Qt.DownArrow)
+        self.log_toggle.setToolTip("折叠日志")
+        self.log_toggle.setAccessibleName("展开或折叠事件日志")
+        self.log_toggle.toggled.connect(self._set_log_expanded)
+        log_heading_row.addWidget(self.log_toggle)
+        log_heading_row.addStretch()
+        layout.addLayout(log_heading_row)
         self.feedback = QPlainTextEdit()
         self.feedback.setReadOnly(True)
         self.feedback.setMaximumBlockCount(200)
         self.feedback.setPlaceholderText("Backend messages will appear here.")
-        layout.addWidget(self.feedback, stretch=1)
+        self.feedback.setFixedHeight(150)
+        layout.addWidget(self.feedback)
 
         container = QWidget(self)
         columns = QHBoxLayout(container)
@@ -532,11 +508,56 @@ class OperatorWindow(QMainWindow):
         storage_scroll.setFrameShape(QFrame.NoFrame)
         storage_scroll.setWidget(self._build_storage_sidebar())
         columns.addWidget(storage_scroll)
-        self.setCentralWidget(container)
+        page = QWidget(self)
+        page_layout = QVBoxLayout(page)
+        page_layout.setContentsMargins(0, 0, 0, 0)
+        page_layout.setSpacing(0)
+        header = QFrame()
+        header.setStyleSheet("background: #eeeeee; border-bottom: 1px solid #d7d7d7;")
+        header_layout = QGridLayout(header)
+        header_layout.setContentsMargins(14, 8, 14, 8)
+        header_layout.setColumnStretch(1, 1)
+        logo = QLabel()
+        logo.setFixedSize(44, 44)
+        logo.setPixmap(QPixmap(str(REPO_ROOT / "apps/operator_gui/assets/company_logo.jpg")).scaled(
+            44, 44, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        brand_group = QHBoxLayout()
+        brand_group.setContentsMargins(0, 0, 0, 0)
+        brand_group.setSpacing(8)
+        brand_group.addWidget(logo)
+        title = QLabel("遥操与本地存储控制台")
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("color: #172b4d; font-family: \"Microsoft YaHei\", \"Noto Sans CJK SC\"; font-size: 26px; font-weight: bold; border: none;")
+        header_layout.addWidget(title, 0, 1)
+        brand = QWidget()
+        brand.setFixedWidth(126)
+        brand_layout = QVBoxLayout(brand)
+        brand_layout.setContentsMargins(0, 0, 0, 0)
+        brand_layout.setSpacing(0)
+        brand_name = QLabel("厘清智能")
+        brand_name.setStyleSheet("font-size: 18px; font-weight: bold; color: #263c70; border: none;")
+        brand_caption = QLabel("let intelligence flow")
+        brand_caption.setStyleSheet("font-size: 10px; font-style: italic; color: #7382a7; border: none;")
+        brand_layout.addWidget(brand_name, alignment=Qt.AlignLeft)
+        brand_layout.addWidget(brand_caption, alignment=Qt.AlignLeft)
+        brand_group.addWidget(brand)
+        header_layout.addLayout(brand_group, 0, 0)
+        spacer = QWidget()
+        spacer.setFixedWidth(178)
+        header_layout.addWidget(spacer, 0, 2)
+        page_layout.addWidget(header)
+        page_layout.addWidget(container, stretch=1)
+        self.setCentralWidget(page)
         self.connection_indicator = QLabel()
         self.connection_indicator.setContentsMargins(4, 0, 4, 0)
         self.statusBar().addPermanentWidget(self.connection_indicator)
-        self.resize(1320, 960)
+        self.resize(1320, 1030)
+
+    def _set_log_expanded(self, expanded: bool) -> None:
+        self.resize(self.width(), self.height() + (150 if expanded else -150))
+        self.feedback.setVisible(expanded)
+        self.log_toggle.setArrowType(Qt.DownArrow if expanded else Qt.RightArrow)
+        self.log_toggle.setToolTip("折叠日志" if expanded else "展开日志")
 
     def _build_storage_sidebar(self) -> QWidget:
         panel = QWidget()
@@ -748,6 +769,10 @@ class OperatorWindow(QMainWindow):
                 and not any(button.isChecked() for button in self.arm_engage_buttons.values())
                 and not any(button.isChecked() for button in self.arm_hold_buttons.values()))
 
+    def _center_task_labels(self) -> None:
+        for index in range(self.task_selector.count()):
+            self.task_selector.setItemData(index, int(Qt.AlignCenter), Qt.TextAlignmentRole)
+
     def _reload_task_selector(self, selected: str | None = None) -> None:
         tasks=get_operator_tasks()
         selected=selected if selected in tasks else next(iter(tasks))
@@ -756,6 +781,7 @@ class OperatorWindow(QMainWindow):
         for task,label in tasks.items():self.task_selector.addItem(label,task)
         self.task_selector.addItem('＋ 新增任务…','__add_task__')
         self.task_selector.addItem('－ 删除当前任务…','__delete_task__')
+        self._center_task_labels()
         self.task_selector.setCurrentIndex(self.task_selector.findData(selected))
         self.task_selector.blockSignals(False)
         self.current_task=selected
@@ -794,8 +820,7 @@ class OperatorWindow(QMainWindow):
         self.task_edit_pending=True
         self.task_selector.setEnabled(False)
         for button in [*self.arm_engage_buttons.values(),*self.arm_hold_buttons.values(),
-                       *self.capture_home_buttons.values(),self.home_both_button,self.capture_ready_button,
-                       self.move_ready_button,self.ready_to_home_button,*self.preset_buttons.values()]:
+                       *self.capture_home_buttons.values(),self.home_both_button]:
             button.setEnabled(False)
         if self.collection_state!='RECORDING':self.collection_record_button.setEnabled(False)
         self.feedback.appendPlainText('正在保存任务…' if action=='add' else '正在永久删除任务、Home 和对应轨迹…')
@@ -829,43 +854,6 @@ class OperatorWindow(QMainWindow):
         sent=notify_full_session(self.full_config['token'],command='reconnect_arms')
         self.feedback.appendPlainText('已请求重连机械臂；就绪后仍需手动使能。' if sent else '重连请求失败，请检查统一启动入口。')
 
-    def _confirm_capture_ready(self) -> None:
-        if self.ready_capture_dialog is not None:
-            self.ready_capture_dialog.raise_()
-            self.ready_capture_dialog.activateWindow()
-            return
-        message = QMessageBox(self)
-        self.ready_capture_dialog = message
-        message.setIcon(QMessageBox.Warning)
-        message.setWindowTitle("Replace shared Ready pose?")
-        message.setText("Record both arms' current measured joints as Ready?")
-        message.setInformativeText(
-            "Both arms must be stopped. This overwrites the one shared Ready pose."
-        )
-        message.setStandardButtons(QMessageBox.Save | QMessageBox.Cancel)
-        message.setDefaultButton(QMessageBox.Cancel)
-        message.button(QMessageBox.Save).setText("Record Ready")
-        message.finished.connect(
-            lambda result, current=message: self._capture_ready_dialog_finished(
-                current, result
-            )
-        )
-        message.open()
-
-    def _capture_ready_dialog_finished(
-        self, message: QMessageBox, result: int
-    ) -> None:
-        if self.ready_capture_dialog is message:
-            self.ready_capture_dialog = None
-        if result == QMessageBox.Save:
-            if any(button.isChecked() for button in self.arm_engage_buttons.values()):
-                self.feedback.appendPlainText(
-                    "[capture_ready] rejected: stop both arms first"
-                )
-            else:
-                self._send("capture_ready")
-        message.deleteLater()
-
     def _button(self, text: str, command: str, arguments=None) -> QPushButton:
         button = QPushButton(text)
         # Keep keyboard input from activating a previously focused button.
@@ -895,29 +883,13 @@ class OperatorWindow(QMainWindow):
             shortcut.setAutoRepeat(False)
             shortcut.activated.connect(slot)
             self.shortcuts.append(shortcut)
-        self.preset_shortcuts = []
-        for key in PRESET_KEYS:
-            shortcut = QShortcut(QKeySequence(key), self)
-            shortcut.setContext(Qt.WindowShortcut)
-            shortcut.setAutoRepeat(False)
-            shortcut.activated.connect(
-                lambda selected=key.lower(): self._shortcut_preset(selected)
-            )
-            self.preset_shortcuts.append(shortcut)
         self.collection_shortcuts = []
         for key, action in COLLECTION_SHORTCUTS.items():
             shortcut = QShortcut(QKeySequence(key), self)
             shortcut.setContext(Qt.WindowShortcut)
             shortcut.setAutoRepeat(False)
-            if action == "toggle_recording":
-                shortcut.activated.connect(self._toggle_collection_recording)
-            else:
-                shortcut.activated.connect(self._mark_collection_milestone)
+            shortcut.activated.connect(self._toggle_collection_recording)
             self.collection_shortcuts.append(shortcut)
-
-    def _shortcut_preset(self, key: str) -> None:
-        if self.connection_state == "connected":
-            self._send("run_preset", {"key": key})
 
     def _shortcut_toggle_engage(self, side: str, target: str = "arm") -> None:
         if self.connection_state != "connected":
@@ -1054,9 +1026,7 @@ class OperatorWindow(QMainWindow):
                 button.setText("Start hand")
                 button.blockSignals(False)
         if self.task_edit_pending:
-            for button in [self.home_both_button,self.capture_ready_button,self.move_ready_button,
-                           self.ready_to_home_button,*self.preset_buttons.values()]:
-                button.setEnabled(False)
+            self.home_both_button.setEnabled(False)
         if self.hand_client is not None:self._apply_hand_status(self.hand_status)
         self.connect_action.setEnabled(state != "connected")
         self.task_selector.setEnabled(not getattr(self,"arm_home_locked",False) and not self.task_edit_pending)
@@ -1113,7 +1083,7 @@ class OperatorWindow(QMainWindow):
 
     def _send(self, command: str, arguments=None) -> None:
         if self.task_edit_pending and command in {'engage','engage_arm','hold_arm','home_arm',
-                'capture_home','capture_ready','move_ready','ready_to_home','run_preset'}:
+                'capture_home'}:
             self.feedback.appendPlainText('任务文件处理中，请完成后再操作机械臂。')
             return
         if self.hand_client:
@@ -1191,7 +1161,6 @@ class OperatorWindow(QMainWindow):
         )
         self.collection_record_button.setText("开始录制 (L)")
         self.collection_record_button.setEnabled(False)
-        self.collection_milestone_button.setEnabled(False)
         self.collection_discard_button.setEnabled(False)
         self.collection_quality_button.setEnabled(False)
         if self.quality_dialog is not None:
@@ -1219,13 +1188,10 @@ class OperatorWindow(QMainWindow):
             self.collection_status_label.setText("STOPPING — 正在结束并校验…")
         elif command == "discard":
             self.collection_status_label.setText("DISCARDING — 正在标记…")
-        elif command == "mark_milestone":
-            self.collection_status_label.setText("RECORDING — 正在保存中间完成标记…")
         if command != "status":
             for button in (
                 self.collection_record_button,
-                self.collection_milestone_button,
-                self.collection_discard_button,
+                    self.collection_discard_button,
                 self.collection_quality_button,
             ):
                 button.setEnabled(False)
@@ -1283,10 +1249,6 @@ class OperatorWindow(QMainWindow):
         else:
             self._send_collection(command, arguments)
 
-    def _mark_collection_milestone(self) -> None:
-        if self.collection_milestone_button.isEnabled():
-            self._send_collection("mark_milestone")
-
     def _poll_collection_status(self) -> None:
         if self.collection_pending:
             return
@@ -1324,13 +1286,6 @@ class OperatorWindow(QMainWindow):
                     self.feedback.appendPlainText(
                         f"[collection] {result.get('last_episode')} 已归类为“{result['quality']}”"
                     )
-            if command == "mark_milestone":
-                markers = response.get("result", {}).get("milestones") or []
-                if markers:
-                    self.feedback.appendPlainText(
-                        f"[collection] 已保存 {markers[-1]['id']}，继续录制"
-                    )
-
     def _apply_collection_status(self, status: dict) -> None:
         self.collection_status = dict(status)
         self._apply_storage_status(status)
@@ -1354,9 +1309,6 @@ class OperatorWindow(QMainWindow):
             detail += f" · {status['quality']}"
         elif status.get("quality_pending"):
             detail += " · 待评价"
-        markers = status.get("milestones") or []
-        if markers:
-            detail += f" · 已标记 {len(markers)} 个完成点"
         failures = list(status.get("failures") or [])
         warnings = len(status.get("source_warnings") or []) + len(status.get("boundary_warnings") or []) + len(
             status.get("transport_warnings") or []
@@ -1415,12 +1367,11 @@ class OperatorWindow(QMainWindow):
         self.collection_record_button.setEnabled(
             can_stop or (can_start and not status.get("quality_pending"))
         )
-        self.collection_milestone_button.setEnabled(bool(status.get("can_mark_milestone")))
         self.collection_discard_button.setEnabled(bool(status.get("can_discard")))
         self.collection_quality_button.setEnabled(bool(status.get("can_rate_quality")))
         if any(command != "status" for command in self.collection_pending.values()):
             for button in (
-                self.collection_record_button, self.collection_milestone_button,
+                self.collection_record_button,
                 self.collection_discard_button, self.collection_quality_button,
             ):
                 button.setEnabled(False)
@@ -1588,14 +1539,7 @@ class OperatorWindow(QMainWindow):
                 and not self.arm_engage_buttons[side].isChecked()
                 and not self.arm_hold_buttons[side].isChecked()
             )
-        both_stopped = not any(
-            button.isChecked() for button in self.arm_engage_buttons.values()
-        ) and not any(
-            button.isChecked() for button in self.arm_hold_buttons.values()
-        )
-        self.capture_ready_button.setEnabled(self.arms_available and both_stopped and not home_locked and not self.task_edit_pending)
-        for button in [self.home_both_button,self.move_ready_button,self.ready_to_home_button,*self.preset_buttons.values()]:
-            button.setEnabled(self.arms_available and not home_locked and not self.task_edit_pending)
+        self.home_both_button.setEnabled(self.arms_available and not home_locked and not self.task_edit_pending)
         # Task setup remains available while arms are offline.
         self.task_selector.setEnabled(not home_locked and not self.task_edit_pending)
         feedback = status.get("feedback", [])

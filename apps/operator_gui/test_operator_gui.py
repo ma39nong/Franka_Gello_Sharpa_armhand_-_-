@@ -24,7 +24,6 @@ from pico_bimanual_franka_teleop.control_server import (
 from apps.operator_gui.operator_gui import (
     COLLECTION_SHORTCUTS,
     PEDAL_BINDINGS,
-    PRESET_KEYS,
     OperatorWindow,
 )
 
@@ -35,9 +34,8 @@ def test_shortcut_bindings_match_the_workcell_layout():
         "B": ("home", "arm", "both"),
         "C": ("toggle_hold", "arm", "right"),
     }
-    assert COLLECTION_SHORTCUTS == {"L": "toggle_recording", "Space": "mark_milestone"}
+    assert COLLECTION_SHORTCUTS == {"L": "toggle_recording"}
     assert not set(PEDAL_BINDINGS) & set(COLLECTION_SHORTCUTS)
-    assert PRESET_KEYS == ("W", "E")
 
 
 def test_teleop_shortcuts_toggle_hold_and_home_arms_only(tmp_path):
@@ -178,7 +176,7 @@ def test_record_home_sends_per_side_command_only_while_arm_is_stopped(tmp_path):
     assert "stop the right arm first" in window.feedback.toPlainText()
 
 
-def test_task_selection_drives_home_and_ready_to_home(tmp_path):
+def test_task_selection_drives_home(tmp_path):
     QSettings.setPath(QSettings.NativeFormat, QSettings.UserScope, str(tmp_path))
     application = QApplication.instance() or QApplication([])
     window = OperatorWindow("127.0.0.1", _unused_port())
@@ -194,8 +192,6 @@ def test_task_selection_drives_home_and_ready_to_home(tmp_path):
             window.task_selector.findData("bean_picking")
         )
         window._shortcut_home("both")
-        window.ready_to_home_button.setEnabled(True)
-        window.ready_to_home_button.click()
         application.processEvents()
     finally:
         window.poll_timer.stop()
@@ -206,38 +202,46 @@ def test_task_selection_drives_home_and_ready_to_home(tmp_path):
 
     assert sent == [
         ("home_arm", {"side": "both", "task": "bean_picking"}),
-        ("ready_to_home", {"task": "bean_picking"}),
     ]
 
 
-def test_w_e_shortcuts_run_presets(tmp_path):
-    QSettings.setPath(
-        QSettings.NativeFormat, QSettings.UserScope, str(tmp_path)
-    )
+def test_removed_motion_controls_and_relocated_connection_menu(tmp_path):
+    from PySide6.QtGui import QShortcut
+    from PySide6.QtWidgets import QGroupBox, QLabel
+    QSettings.setPath(QSettings.NativeFormat, QSettings.UserScope, str(tmp_path))
     application = QApplication.instance() or QApplication([])
     window = OperatorWindow("127.0.0.1", _unused_port())
-    sent = []
     try:
-        window.socket.abort()
-        window.reconnect_timer.stop()
-        window.connection_state = "connected"
-        window._send = lambda command, arguments=None: sent.append(
-            (command, arguments or {})
-        )
-        for shortcut in window.preset_shortcuts:
-            shortcut.activated.emit()
-            application.processEvents()
+        window.show()
+        application.processEvents()
+        titles = {box.title() for box in window.findChildren(QGroupBox)}
+        assert "Shared Ready and task Home trajectory" not in titles
+        assert "Preset relative actions — 65% speed" not in titles
+        assert not hasattr(window, "_confirm_capture_ready")
+        assert not hasattr(window, "_shortcut_preset")
+        keys = {shortcut.key().toString() for shortcut in window.findChildren(QShortcut)}
+        assert not keys & {"Q", "W", "E"}
+        assert keys == {"A", "B", "C", "L"}
+        assert not any(label.text().startswith("Shortcuts:") for label in window.findChildren(QLabel))
+        heading = window.system_status_heading
+        button = window.connection_button
+        assert button.parentWidget() is heading.parentWidget()
+        assert button.geometry().center().y() == heading.geometry().center().y()
+        assert button.geometry().left() > heading.geometry().right()
+        actions = button.menu().actions()
+        assert window.connect_action in actions
+        assert window.connect_action.shortcut().toString() == "Ctrl+K"
+        assert any(action.text() == "Quit" and action.shortcut().toString() == "Ctrl+Q" for action in actions)
+        window.connect_action.trigger()
+        assert window.connection_dialog is not None
+        window.connection_dialog.reject()
+        # Status refresh and task locking must not reference removed controls.
+        window._apply_status({"home_locked": True})
+        assert not window.home_both_button.isEnabled()
+        window._apply_status({"home_locked": False})
+        assert window.home_both_button.isEnabled()
     finally:
-        window.poll_timer.stop()
-        window.health_timer.stop()
-        window.reconnect_timer.stop()
-        window.socket.abort()
         window.close()
-
-    assert sent == [
-        ("run_preset", {"key": "w"}),
-        ("run_preset", {"key": "e"}),
-    ]
 
 
 def test_collection_panel_enables_only_valid_episode_actions(tmp_path):
@@ -309,28 +313,22 @@ def test_collection_shortcuts_mark_only_while_recording_and_keep_discard_button(
         window._apply_collection_status(
             {"state": "READY", "can_start": True, "can_stop": False}
         )
-        shortcuts["Space"].activated.emit()
         shortcuts["L"].activated.emit()
         window._apply_collection_status(
             {"state": "RECORDING", "can_start": False, "can_stop": True,
              "can_mark_milestone": True, "milestones": [{"id": "milestone_1"}]}
         )
-        assert "已标记 1 个完成点" in window.collection_status_label.text()
-        assert not shortcuts["Space"].autoRepeat()
-        shortcuts["Space"].activated.emit()
         shortcuts["L"].activated.emit()
         window._apply_collection_status(
             {"state": "FINALIZED", "can_discard": True}
         )
-        shortcuts["Space"].activated.emit()
         window.collection_discard_button.click()
         window._set_collection_offline()
-        shortcuts["Space"].activated.emit()
     finally:
         window.close()
         application.processEvents()
 
-    assert sent == ["start", "mark_milestone", "stop", "discard"]
+    assert sent == ["start", "stop", "discard"]
 
 
 def _unused_port() -> int:
