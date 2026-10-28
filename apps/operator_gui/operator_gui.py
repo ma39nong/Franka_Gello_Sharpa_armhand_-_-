@@ -286,13 +286,40 @@ class OperatorWindow(QMainWindow):
         connection_menu.addAction(quit_action)
         self.addAction(quit_action)
 
+        self.setStyleSheet("""
+            QMainWindow, QWidget#operatorPage, QWidget#operatorContent, QWidget#operatorRoot {
+                background-color: #f3f4f9; color: #34304a;
+            }
+            QWidget#storagePanel { background: #ffffff; border: 1px solid #e4e3ee; border-radius: 10px; }
+            QGroupBox { background: #ffffff; border: 1px solid #e4e3ee; border-radius: 9px;
+                        margin-top: 22px; padding-top: 12px; font-weight: bold; color: #47415e; }
+            QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; top: -3px; left: 12px; padding: 0 4px; }
+            QPushButton, QComboBox, QLineEdit, QSpinBox {
+                background: #ffffff; color: #48415f; border: 1px solid #dedce9;
+                border-radius: 5px; padding: 4px 8px;
+            }
+            QComboBox { padding-right: 28px; }
+            QComboBox::drop-down { subcontrol-origin: padding; subcontrol-position: top right; width: 26px; border-left: 1px solid #ccc7db; border-top-right-radius: 4px; border-bottom-right-radius: 4px; background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #e5e2ec); }
+            QPushButton:hover, QComboBox:hover { border-color: #a294d1; background: #f6f3fc; }
+            QPushButton:checked { background: #eae4f8; border-color: #8d79c4; color: #554286; }
+            QPushButton:disabled, QComboBox:disabled { color: #9290a1; background: #f6f6f9; border-color: #e8e7ee; }
+            QPlainTextEdit { background: #ffffff; color: #49445c; border: 1px solid #e1dfea;
+                             border-radius: 7px; padding: 7px; }
+            QToolButton { color: #65548e; border: none; padding: 4px; }
+            QToolButton:hover { background: #eae5f5; border-radius: 4px; }
+            QScrollArea { border: none; background: transparent; }
+            QStatusBar { background: #f3f4f9; color: #706a80; }
+        """)
         root = QWidget(self)
+        root.setObjectName("operatorRoot")
         layout = QVBoxLayout(root)
 
         self.system_status_heading = QLabel("系统状态")
         self.system_status_heading.setStyleSheet("font-weight: bold;")
         status_heading_row = QHBoxLayout()
         status_heading_row.addWidget(self.system_status_heading)
+        self.status_toggle = self._section_toggle("系统状态")
+        status_heading_row.addWidget(self.status_toggle)
         status_heading_row.addStretch()
         self.connection_button = QToolButton()
         self.connection_button.setText("Connection")
@@ -308,12 +335,21 @@ class OperatorWindow(QMainWindow):
             QFontDatabase.systemFont(QFontDatabase.FixedFont)
         )
         layout.addWidget(self.status_label)
+        self.status_toggle.toggled.connect(
+            lambda expanded: self._set_section_expanded(self.status_label, self.status_toggle, expanded, 100, "系统状态")
+        )
 
-        collection_heading = QLabel("数据采集（独立采集终端）")
-        layout.addWidget(collection_heading)
+        collection_heading = QLabel("数据采集")
+        collection_heading_row = QHBoxLayout()
+        collection_heading_row.addWidget(collection_heading)
+        self.collection_toggle = self._section_toggle("数据采集")
+        collection_heading_row.addWidget(self.collection_toggle)
+        collection_heading_row.addStretch()
+        layout.addLayout(collection_heading_row)
         collection_box = QFrame()
         collection_box.setFixedHeight(190)
-        collection_box.setStyleSheet("QFrame { background-color: white; }")
+        collection_box.setObjectName("collectionBox")
+        collection_box.setStyleSheet("QFrame#collectionBox { background-color: white; border: 1px solid #e4e3ee; border-radius: 9px; }")
         collection_layout = QHBoxLayout(collection_box)
         margins = collection_layout.contentsMargins()
         collection_layout.setContentsMargins(margins.left(), margins.top() + 6, margins.right(), margins.bottom())
@@ -347,6 +383,9 @@ class OperatorWindow(QMainWindow):
             button.setEnabled(False)
             collection_layout.addWidget(button, alignment=Qt.AlignBottom)
         layout.addWidget(collection_box)
+        self.collection_toggle.toggled.connect(
+            lambda expanded: self._set_section_expanded(collection_box, self.collection_toggle, expanded, 190, "数据采集")
+        )
 
         layout.addSpacing(6)
         controls_grid = QGridLayout()
@@ -437,6 +476,8 @@ class OperatorWindow(QMainWindow):
         open_both = self._button("Open both hands", "open_hand", {"side": "both"})
         actions.addWidget(open_both, stretch=1)
         self.task_selector = QComboBox()
+        arrow_path = (REPO_ROOT / "apps/operator_gui/assets/dropdown_arrow.svg").as_posix()
+        self.task_selector.setStyleSheet(f"QComboBox::down-arrow {{ image: url({arrow_path}); width: 12px; height: 12px; }}")
         self.task_selector.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
         self.task_selector.setMinimumContentsLength(6)
         for task, label in get_operator_tasks().items():
@@ -494,6 +535,7 @@ class OperatorWindow(QMainWindow):
         layout.addWidget(self.feedback)
 
         container = QWidget(self)
+        container.setObjectName("operatorContent")
         columns = QHBoxLayout(container)
         columns.setContentsMargins(0, 0, 0, 0)
         controls_scroll = QScrollArea()
@@ -509,11 +551,12 @@ class OperatorWindow(QMainWindow):
         storage_scroll.setWidget(self._build_storage_sidebar())
         columns.addWidget(storage_scroll)
         page = QWidget(self)
+        page.setObjectName("operatorPage")
         page_layout = QVBoxLayout(page)
         page_layout.setContentsMargins(0, 0, 0, 0)
         page_layout.setSpacing(0)
         header = QFrame()
-        header.setStyleSheet("background: #eeeeee; border-bottom: 1px solid #d7d7d7;")
+        header.setStyleSheet("background: #ffffff; border-bottom: 1px solid #e4e3ee;")
         header_layout = QGridLayout(header)
         header_layout.setContentsMargins(14, 8, 14, 8)
         header_layout.setColumnStretch(1, 1)
@@ -527,7 +570,7 @@ class OperatorWindow(QMainWindow):
         brand_group.addWidget(logo)
         title = QLabel("遥操与本地存储控制台")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #172b4d; font-family: \"Microsoft YaHei\", \"Noto Sans CJK SC\"; font-size: 26px; font-weight: bold; border: none;")
+        title.setStyleSheet("color: #514274; font-family: \"Microsoft YaHei\", \"Noto Sans CJK SC\"; font-size: 26px; font-weight: bold; border: none;")
         header_layout.addWidget(title, 0, 1)
         brand = QWidget()
         brand.setFixedWidth(126)
@@ -553,6 +596,22 @@ class OperatorWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self.connection_indicator)
         self.resize(1320, 1030)
 
+    def _section_toggle(self, name: str) -> QToolButton:
+        button = QToolButton()
+        button.setCheckable(True)
+        button.setChecked(True)
+        button.setAutoRaise(True)
+        button.setArrowType(Qt.DownArrow)
+        button.setToolTip("折叠" + name)
+        button.setAccessibleName("展开或折叠" + name)
+        return button
+
+    def _set_section_expanded(self, widget, button, expanded: bool, height: int, name: str) -> None:
+        self.resize(self.width(), self.height() + (height if expanded else -height))
+        widget.setVisible(expanded)
+        button.setArrowType(Qt.DownArrow if expanded else Qt.RightArrow)
+        button.setToolTip(("折叠" if expanded else "展开") + name)
+
     def _set_log_expanded(self, expanded: bool) -> None:
         self.resize(self.width(), self.height() + (150 if expanded else -150))
         self.feedback.setVisible(expanded)
@@ -561,6 +620,7 @@ class OperatorWindow(QMainWindow):
 
     def _build_storage_sidebar(self) -> QWidget:
         panel = QWidget()
+        panel.setObjectName("storagePanel")
         panel.setMinimumWidth(290)
         panel.setMaximumWidth(350)
         column = QVBoxLayout(panel)
@@ -602,7 +662,7 @@ class OperatorWindow(QMainWindow):
         self.storage_preview.setWordWrap(True)
         self.storage_preview.setTextFormat(Qt.PlainText)
         self.storage_preview.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.storage_preview.setStyleSheet("color: #285d49; background: white; border: 1px solid #b8b8b8; padding: 8px;")
+        self.storage_preview.setStyleSheet("color: #285d49; background: #f5f3fa; border: 1px solid #e4dff0; border-radius: 5px; padding: 8px;")
         column.addWidget(self.storage_preview)
         column.addSpacing(18)
         column.addWidget(QLabel("本段保存状态"))

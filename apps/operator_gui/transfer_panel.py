@@ -41,7 +41,7 @@ class TransferPanel(QWidget):
         self.remote_preview.setWordWrap(True)
         self.remote_preview.setTextFormat(Qt.PlainText)
         self.remote_preview.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.remote_preview.setStyleSheet('color: #285d49; background: white; border: 1px solid #b8b8b8; padding: 8px;')
+        self.remote_preview.setStyleSheet('color: #285d49; background: #f5f3fa; border: 1px solid #e4dff0; border-radius: 5px; padding: 8px;')
         column.addWidget(self.remote_preview)
         self.remote_edit.textChanged.connect(self.update_remote_preview)
         self.update_remote_preview()
