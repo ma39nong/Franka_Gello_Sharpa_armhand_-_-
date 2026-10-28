@@ -54,6 +54,7 @@ class ManusHandRuntime(FullHandRuntime):
 
     def __init__(self, node, config):
         self.feedback = {}
+        self.recovery_targets = {}
         self.warning_times = {}
         super().__init__(node, config)
         from sensor_msgs.msg import JointState
@@ -101,9 +102,40 @@ class ManusHandRuntime(FullHandRuntime):
                 self.request(side, False)
         elif command == 'open_hand':
             self.opening.start(args.get('side'))
+        elif command == 'reconnect_hands':
+            self.reconnect_hands()
         elif command != 'status':
             raise ValueError('Unknown hand command')
         return self.status()
+
+    def reconnect_hands(self):
+        """Explicit recovery to OFF; never restore a following/opening permit."""
+        if self.latch.phase != 'FAULT':
+            raise ValueError('Hands are not faulted; no recovery required')
+        if any(self.latch.requested.values()) or self.opening.operations:
+            raise ValueError('Stop both hands before reconnecting')
+        now = time.monotonic()
+        if self.latch.last_gui is None or not 0 <= now - self.latch.last_gui <= TIMEOUT_S:
+            raise ValueError('Hand recovery requires a live GUI lease')
+        for side in self.latch.requested:
+            stamp = self.recovery_targets.get(side)
+            if stamp is None or not 0 <= now - stamp <= TIMEOUT_S:
+                raise ValueError(f'{side}: waiting for fresh valid MANUS targets; check glove connection')
+        self.node.check_manus_connections(require_source=True)
+        from adapters.litchibot.open_hand import checked_feedback
+        # Keep FAULT latched until BOTH physical stops and feedback checks pass.
+        for side in self.latch.requested:
+            self.stop_hardware_side(side)
+            checked_feedback(self.node._hands[self.native_side(side)].read_joint_state().position,
+                             self.latch.feedback_limit_tolerance)
+        self.node.check_manus_connections(require_source=True)
+        self.opening.results.clear()
+        self.latch.requested = {s: False for s in self.latch.requested}
+        self.latch.samples = {s: 0 for s in self.latch.samples}
+        self.node.stop_applied = False
+        self.node.stopped_sides.clear()
+        self.latch.reason = ''
+        self.latch.phase = 'READY'
 
     def disconnected(self):
         # Actual GUI loss revokes permits; recovery never resumes motion itself.
@@ -118,8 +150,6 @@ class ManusHandRuntime(FullHandRuntime):
         self.warn('MANUS source status: ' + message.data)
 
     def manus(self, side, message):
-        if self.latch.phase == 'FAULT':
-            return
         try:
             q = np.asarray(message.position, dtype=float)
             if tuple(message.name) != JOINT_NAMES or q.shape != (22,) or not np.isfinite(q).all():
@@ -127,7 +157,17 @@ class ManusHandRuntime(FullHandRuntime):
             if np.any(q < JOINT_LIMITS[:, 0]) or np.any(q > JOINT_LIMITS[:, 1]):
                 raise ValueError('MANUS target rejected by original joint limits')
         except (ValueError, TypeError, AttributeError) as error:
+            self.recovery_targets.pop(side, None)
             self.warn(error)
+            return
+        now = time.monotonic()
+        stamp = message.header.stamp.sec * 10**9 + message.header.stamp.nanosec
+        age = (self.node.get_clock().now().nanoseconds - stamp) / 1e9
+        if 0 <= age <= TIMEOUT_S:
+            self.recovery_targets[side] = now - age
+        else:
+            self.recovery_targets.pop(side, None)
+        if self.latch.phase == 'FAULT':
             return
         self.latch.samples[side] += 1
         if not self.latch.requested[side] or side in self.opening.operations:

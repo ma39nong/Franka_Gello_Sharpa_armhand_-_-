@@ -22,6 +22,57 @@ def port():
     with socket.socket() as s:s.bind(('127.0.0.1',0));return s.getsockname()[1]
 
 
+def test_connection_menu_recovers_hands_without_engaging_or_touching_arms(tmp_path, monkeypatch):
+    app=QApplication.instance() or QApplication([])
+    QSettings.setPath(QSettings.NativeFormat,QSettings.UserScope,str(tmp_path))
+    token='b'*64;server=HandControlServer(port(),token)
+    cfg=tmp_path/'session.json'
+    cfg.write_text(json.dumps(dict(control_port=server.server_address[1],token=token,source='manus',mode='normal')))
+    monkeypatch.setenv('TELEOP_FULL_CONFIG',str(cfg))
+    phase=['FAULT'];requests=[];stop=threading.Event()
+    def dispatch(req):
+        requests.append(req['command'])
+        if req['command']=='reconnect_hands':phase[0]='READY'
+        return dict(phase=phase[0],reason='left Open hand did not settle before timeout' if phase[0]=='FAULT' else '',
+            normal_forwarding=True,hands={s:dict(state='FAULT' if phase[0]=='FAULT' else 'DISABLED',
+            permit=False,can_engage=phase[0]!='FAULT') for s in ('left','right')})
+    def serve():
+        while not stop.wait(.003):server.drain(dispatch,lambda:None)
+    thread=threading.Thread(target=serve,daemon=True);thread.start()
+    window=OperatorWindow('127.0.0.1',port(),collection_port=port())
+    def wait(predicate):
+        deadline=time.monotonic()+3
+        while time.monotonic()<deadline:
+            app.processEvents()
+            if predicate():return
+            time.sleep(.003)
+        raise AssertionError((requests,window.hand_status,window.feedback.toPlainText()))
+    try:
+        wait(lambda:window.hand_reconnect_action.isEnabled())
+        assert all(not b.isEnabled() for b in window.hand_engage_buttons.values())
+        window.hand_reconnect_action.trigger()
+        wait(lambda:'手部故障已恢复' in window.feedback.toPlainText())
+        assert all(b.isEnabled() and not b.isChecked() for b in window.hand_engage_buttons.values())
+        assert not window.hand_reconnect_action.isEnabled()
+        index=requests.index('reconnect_hands')
+        assert requests[index-1]=='heartbeat'
+        assert not any(c in ('engage_hand','open_hand') for c in requests)
+        assert window.connection_state!='connected'  # No arm backend is needed.
+    finally:
+        window.close();app.processEvents();stop.set();thread.join(1);server.close()
+
+
+@pytest.mark.parametrize('source,mode', [('litchibot','normal'),('manus','supervised_hardware_validation')])
+def test_hand_fault_recovery_menu_does_not_apply_to_other_policies(tmp_path,monkeypatch,source,mode):
+    app=QApplication.instance() or QApplication([])
+    cfg=tmp_path/'session.json'
+    cfg.write_text(json.dumps(dict(control_port=port(),token='d'*64,source=source,mode=mode)))
+    monkeypatch.setenv('TELEOP_FULL_CONFIG',str(cfg))
+    window=OperatorWindow('127.0.0.1',port(),collection_port=port())
+    try:assert not hasattr(window,'hand_reconnect_action')
+    finally:window.close();app.processEvents()
+
+
 def test_manus_acquisition_disables_start_without_changing_legacy_status(tmp_path,monkeypatch):
     app=QApplication.instance() or QApplication([])
     monkeypatch.delenv('TELEOP_FULL_CONFIG',raising=False)

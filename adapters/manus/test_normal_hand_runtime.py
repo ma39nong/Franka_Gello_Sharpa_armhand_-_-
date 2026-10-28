@@ -40,7 +40,10 @@ def test_project_manus_launch_uses_standalone_normal_parameters(tmp_path, mode):
 
 
 @pytest.mark.parametrize('mode', ['fake', 'normal'])
-@pytest.mark.parametrize('scenario', ['idle', 'jump', 'invalid', 'gap', 'heartbeat', 'disconnect', 'sender', 'latest'])
+@pytest.mark.parametrize('scenario', ['idle', 'jump', 'invalid', 'gap', 'heartbeat', 'disconnect', 'sender', 'latest',
+                                     'open_left', 'open_right', 'open_both',
+                                     'open_offset_left', 'open_offset_right', 'open_offset_both',
+                                     'reconnect', 'reconnect_duplicate', 'reconnect_device', 'reconnect_source'])
 def test_normal_manus_original_sender(tmp_path, monkeypatch, isolated_guard_paths, mode, scenario):
     rclpy = pytest.importorskip('rclpy')
     from sensor_msgs.msg import JointState
@@ -77,6 +80,93 @@ def test_normal_manus_original_sender(tmp_path, monkeypatch, isolated_guard_path
             runtime.manus(side, msg)
         feed()
         assert node.validation_send_count == 0
+        if scenario.startswith('reconnect'):
+            node.stop_validation('Open hand failed: left Open hand did not settle before timeout')
+            feed(side='left');feed(side='right')
+            assert node.latch.phase == 'FAULT'
+            monkeypatch.setattr(node, 'get_node_names_and_namespaces', lambda:[('sharpa_driver','/')])
+            def publishers(topic):
+                if topic.endswith('/target'):
+                    return [] if scenario=='reconnect_source' else [SimpleNamespace(node_name='manus_sharpa_retarget')]
+                return [SimpleNamespace(node_name='sharpa_driver')]
+            monkeypatch.setattr(node, 'get_publishers_info_by_topic', publishers)
+            if scenario=='reconnect_duplicate':
+                monkeypatch.setattr(node, 'get_node_names_and_namespaces',
+                                    lambda:[('sharpa_driver','/'),('sharpa_driver','/other')])
+            if scenario=='reconnect_device':hands[0].disconnect()
+            if scenario!='reconnect':
+                with pytest.raises(RuntimeError):runtime.dispatch({'command':'reconnect_hands'})
+                assert node.latch.phase == 'FAULT' and node.stop_applied
+                assert node.validation_send_count == 0
+                return
+            result=runtime.dispatch({'command':'reconnect_hands'})
+            assert result['phase']=='READY' and not result['reason']
+            assert not node.stop_applied and not node.stopped_sides
+            assert node.needs_enable == {'left','right'}
+            assert all(d['state']=='DISABLED' and not d['permit'] for d in result['hands'].values())
+            feed(side='left');feed(side='right')
+            assert node.validation_send_count == 0
+            runtime.request('left',True);feed(side='left')
+            assert node.validation_send_count == 1
+            assert not node.latch.requested['right']
+            if mode=='normal':hands[0]._ensure_enabled.assert_called_once()
+            return
+        if scenario.startswith('open_'):
+            has_offset = scenario.startswith('open_offset_')
+            selection = scenario.removeprefix('open_offset_' if has_offset else 'open_')
+            selected = {'left', 'right'} if selection == 'both' else {selection}
+            for hand in hands:
+                hand._position = tuple(np.zeros(22))
+                # Start from a bent joint and model slow physical enable polling.
+                pose = np.zeros(22);pose[JOINT_NAMES.index('thumb_IP')] = .4
+                hand._position = tuple(pose)
+                if has_offset:
+                    original_send = hand.send_action
+                    def send(action, h=hand, original=original_send):
+                        result = original(action)
+                        measured = list(h._position)
+                        measured[JOINT_NAMES.index('thumb_IP')] += .218
+                        h._position = tuple(measured)
+                        return result
+                    hand.send_action = Mock(side_effect=send)
+                if mode == 'normal':
+                    def enable(h=hand):
+                        time.sleep(.25)
+                        h._stopped = False
+                    hand._ensure_enabled.side_effect = enable
+            runtime.dispatch({'command':'open_hand', 'arguments':{'side':selection}})
+            runtime.opening.tick()
+            assert node.latch.phase != 'FAULT', node.latch.reason
+            assert node.validation_send_count == 0
+            assert set(runtime.opening.operations) == selected
+            end = time.monotonic() + 4
+            while runtime.opening.operations and time.monotonic() < end:
+                runtime.dispatch({'command':'heartbeat', 'monotonic_ns':time.monotonic_ns()})
+                runtime.tick()
+                time.sleep(.02)
+            assert not runtime.opening.operations
+            assert node.latch.phase != 'FAULT', node.latch.reason
+            assert not any(node.latch.requested.values())
+            for hand in hands:
+                if hand.config.side.value in selected:
+                    assert hand.send_action.call_count > 20
+                    expected = np.zeros(22)
+                    if has_offset:expected[JOINT_NAMES.index('thumb_IP')] = .218
+                    np.testing.assert_array_equal(hand.read_joint_state().position, expected)
+                    if mode == 'normal':hand._ensure_enabled.assert_called_once()
+                else:
+                    hand.send_action.assert_not_called()
+            # Completion must leave Start hand usable, without reconnecting or
+            # automatically restoring following. Its next frame re-enables SDK.
+            for side in selected:
+                before = node.validation_send_count
+                runtime.request(side, True)
+                feed(side=side)
+                assert node.validation_send_count == before + 1
+                assert node.latch.requested[side]
+                assert node.latch.side_state(side, time.monotonic()) == 'ACTIVE'
+            assert node.latch.phase != 'FAULT'
+            return
         if scenario == 'idle':
             with patch('adapters.manus.normal_hand_runtime.time.monotonic', return_value=time.monotonic()+600):
                 runtime.tick()

@@ -302,17 +302,7 @@ def main(argv=None):
                     try:control.recv(4097)
                     except BlockingIOError:break
                 self.full.tick()
-                if sum(n=='sharpa_driver' for n,ns in self.get_node_names_and_namespaces())>1:
-                    raise RuntimeError('Duplicate driver ownership')
-                for side,hand in self._hands.items():
-                    if not hand.is_connected:raise RuntimeError('Native device disconnected: '+side.value)
-                    sources=self.get_publishers_info_by_topic(f'/teleop/sharpa/{side.value}/target')
-                    if len(sources)>1 or any(p.node_name!='manus_sharpa_retarget' for p in sources):
-                        raise RuntimeError('Duplicate/unexpected MANUS target owner')
-                    for topic in (f'/sharpa/{side.value}/command',f'/sharpa/{side.value}/joint_states'):
-                        pubs=self.get_publishers_info_by_topic(topic)
-                        if len(pubs)>1 or any(p.node_name!='sharpa_driver' for p in pubs):
-                            raise RuntimeError('Duplicate/unexpected driver ownership')
+                self.check_manus_connections()
             except Exception as error:self.stop_validation(error)
             now=time.monotonic()
             if now-getattr(self,'_manus_status_at',0)>1:
@@ -324,6 +314,26 @@ def main(argv=None):
                     temporary.write_text(json.dumps(payload));os.chmod(temporary,0o600);temporary.replace(status_path)
                 except OSError as error:self.full.warn('Hand status storage unavailable: '+str(error))
                 self._manus_status_at=now
+
+        def check_manus_connections(self, *, require_source=False):
+            if not manus_normal:
+                raise ValueError('Hand recovery is restricted to managed MANUS normal/fake mode')
+            if require_source and {side.value for side in self._hands} != {'left','right'}:
+                raise RuntimeError('Both managed hands must be connected before recovery')
+            drivers=sum(n=='sharpa_driver' for n,ns in self.get_node_names_and_namespaces())
+            if drivers>1 or (require_source and drivers!=1):
+                raise RuntimeError('Duplicate or missing driver ownership')
+            for side,hand in self._hands.items():
+                if not hand.is_connected:raise RuntimeError('Native device disconnected: '+side.value)
+                sources=self.get_publishers_info_by_topic(f'/teleop/sharpa/{side.value}/target')
+                if (len(sources)>1 or (require_source and len(sources)!=1)
+                        or any(p.node_name!='manus_sharpa_retarget' for p in sources)):
+                    raise RuntimeError('Missing/duplicate/unexpected MANUS target owner')
+                for topic in (f'/sharpa/{side.value}/command',f'/sharpa/{side.value}/joint_states'):
+                    pubs=self.get_publishers_info_by_topic(topic)
+                    if (len(pubs)>1 or (require_source and len(pubs)!=1)
+                            or any(p.node_name!='sharpa_driver' for p in pubs)):
+                        raise RuntimeError('Missing/duplicate/unexpected driver ownership')
 
         def service_normal(self):
             if stop_requested:
@@ -386,18 +396,22 @@ def main(argv=None):
 
 
         def _forward_managed(self,side,message,authorize=None):
-            # Normal hands stay enabled for the session; only validation/Manus
-            # use the existing re-enable path after their native watchdog stop.
-            if not normal and side.value in self.needs_enable:
-                if software:self._hands[side]._stopped=False
-                else:self._hands[side]._ensure_enabled()
-                self.needs_enable.discard(side.value)
+            self.prepare_open(side)
             if authorize is not None:authorize()
             previous=self._last_command_at[side]
             super()._on_command(side,message)
             if self._last_command_at[side]<=previous:raise ValueError('Original sender rejected command')
             self.validation_send_count+=1
             return True
+
+        def prepare_open(self,side):
+            """Enable the native sender without issuing a position command."""
+            # Normal hands stay enabled for the session; only validation/Manus
+            # use the existing re-enable path after their native watchdog stop.
+            if not normal and side.value in self.needs_enable:
+                if software:self._hands[side]._stopped=False
+                else:self._hands[side]._ensure_enabled()
+                self.needs_enable.discard(side.value)
 
     node=None
     try:

@@ -31,7 +31,7 @@ def action(monkeypatch):
             h.reads += 1
             return SimpleNamespace(position=h.position.copy())
         hand.read_joint_state = read
-    node = SimpleNamespace(_hands=hands, stop_validation=Mock())
+    node = SimpleNamespace(_hands=hands, stop_validation=Mock(), prepare_open=Mock())
     def ros_now():
         ns = int(clock.now * 1e9)
         return SimpleNamespace(nanoseconds=ns, to_msg=lambda: SimpleNamespace(sec=ns//10**9, nanosec=ns%10**9))
@@ -82,10 +82,49 @@ def test_open_reaches_defaults_without_restoring_following(action, side, selecte
         assert all(np.max(np.abs(b-a)) <= .5*.04 + 1e-9 for a,b in zip(q,q[1:]))
 
 
+@pytest.mark.parametrize('selection', ['left', 'right', 'both'])
+@pytest.mark.parametrize('residual', [.174, .218, .25, .251])
+def test_coarse_opening_settles_only_inside_tolerance(action, selection, residual):
+    control, runtime, hands, clock, sent = action
+    selected = {'left','right'} if selection == 'both' else {selection}
+    original = runtime.node.forward_open
+    joint = JOINT_NAMES.index('thumb_IP')
+    def forward(side, message):
+        original(side, message)
+        # The SDK accepts the target, but measured position retains an offset.
+        hands[side].position[joint] += residual
+    runtime.node.forward_open = forward
+    control.start(selection)
+    for _ in range(160):
+        clock.now += .04
+        runtime.latch.last_gui = clock.now
+        control.tick()
+        if not control.operations:break
+    assert not control.operations
+    assert all(not runtime.latch.requested[s] for s in selected)
+    assert {s for s, q in sent} == selected
+    if residual <= .25:
+        runtime.node.stop_validation.assert_not_called()
+        assert all('已张开' in control.results[s] for s in selected)
+        for side, hand in hands.items():
+            if side.value in selected:assert hand.position[joint] == pytest.approx(residual)
+    else:
+        runtime.node.stop_validation.assert_called_once()
+        reason = runtime.node.stop_validation.call_args.args[0]
+        assert 'did not settle before timeout' in reason
+        assert 'joint=thumb_IP' in reason and 'error=0.25100 rad' in reason
+        assert 'tolerance=0.25000 rad' in reason
+
+
 @pytest.mark.parametrize('failure', ['lease', 'fault', 'feedback', 'sender', 'settle'])
 def test_open_failure_never_bypasses_existing_stop(action, failure):
     control, runtime, hands, clock, sent = action
     control.start('both')
+    clock.now += .01
+    runtime.latch.last_gui = clock.now
+    control.tick()
+    sent.clear()
+    clock.now += .04
     if failure == 'lease':clock.now += .21
     elif failure == 'fault':runtime.latch.phase = 'FAULT';runtime.latch.reason='existing fault'
     elif failure == 'feedback':next(iter(hands.values())).position[0] = float('nan')
@@ -103,7 +142,7 @@ def test_cancel_only_selected_action_and_reject_forged_target(action):
     control.start('both')
     runtime.request('left', False)
     assert set(control.operations) == {'right'}
-    job = control.operations['right'];job.desired = job.target(clock.now)
+    job = control.operations['right'];job.prepared_at = None;job.desired = job.target(clock.now)
     message = SimpleNamespace(header=SimpleNamespace(stamp=SimpleNamespace(sec=10,nanosec=0),
         frame_id='supervisor_open:right:'+'a'*16), name=list(JOINT_NAMES), position=[.8]*22)
     with pytest.raises(ValueError, match='fixed action'):
@@ -125,6 +164,62 @@ def test_no_click_means_no_action_or_feedback_reads(action):
     assert all(h.reads == 0 for h in hands.values())
     assert not sent
     runtime.stop_hardware_side.assert_not_called()
+
+
+@pytest.mark.parametrize('selection', ['left', 'right', 'both'])
+def test_slow_native_preparation_waits_for_new_lease_before_any_send(action, selection):
+    control, runtime, hands, clock, sent = action
+    selected = {'left', 'right'} if selection == 'both' else {selection}
+    def enable(side):
+        clock.now += .35  # Real SDK enable polling can exceed the 200 ms lease.
+    runtime.node.prepare_open.side_effect = enable
+    control.start(selection)
+    assert not sent
+    assert {c.args[0].value for c in runtime.node.prepare_open.call_args_list} == selected
+    assert all(not runtime.latch.requested[s] for s in selected)
+    control.tick()
+    assert not sent and set(control.operations) == selected
+    runtime.node.stop_validation.assert_not_called()
+    # A delayed heartbeat from before preparation cannot authorize movement.
+    clock.now += .04
+    runtime.latch.last_gui = clock.now - .1
+    control.tick()
+    assert not sent
+    # Re-sample the actual hand pose after hardware preparation.
+    for side, hand in hands.items():
+        if side.value in selected:hand.position = START * .5
+    runtime.latch.last_gui = clock.now
+    control.tick()
+    assert {s for s, q in sent} == selected
+    for s, q in sent:np.testing.assert_array_equal(q, START * .5)
+    for _ in range(70):
+        clock.now += .04
+        runtime.latch.last_gui = clock.now
+        control.tick()
+    assert not control.operations
+    assert all('已张开' in control.results[s] for s in selected)
+    runtime.node.stop_validation.assert_not_called()
+
+
+@pytest.mark.parametrize('selection', ['left', 'right', 'both'])
+def test_missing_post_preparation_heartbeat_still_stops_without_motion(action, selection):
+    control, runtime, hands, clock, sent = action
+    runtime.node.prepare_open.side_effect = lambda side: setattr(clock, 'now', clock.now + .35)
+    control.start(selection)
+    clock.now += .201
+    control.tick()
+    assert not sent and not control.operations
+    runtime.node.stop_validation.assert_called_once()
+
+
+def test_prepare_failure_stops_both_without_any_command(action):
+    control, runtime, hands, clock, sent = action
+    runtime.node.prepare_open.side_effect = [None, RuntimeError('enable failed')]
+    with pytest.raises(RuntimeError, match='enable failed'):
+        control.start('both')
+    assert not sent and not control.operations
+    assert not any(runtime.latch.requested.values())
+    assert runtime.stop_hardware_side.call_count == 4
 
 
 @pytest.mark.parametrize('values', [[0.0]*21, [float('nan')]*22, [3.0]*22])

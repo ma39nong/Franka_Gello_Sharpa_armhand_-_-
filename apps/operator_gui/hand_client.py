@@ -28,6 +28,8 @@ class HandClient(QObject):
     def request(self,command,arguments=None):
         if self.socket.state()!=QAbstractSocket.ConnectedState:
             self.event.emit('Hand supervisor offline');return
+        if command in ('open_hand','reconnect_hands'):
+            self.request('heartbeat',{'hold':self.held})
         self.id+=1;self.pending[self.id]=command
         row={'id':self.id,'command':command,'arguments':arguments or {},'token':self.token}
         if command=='heartbeat':
@@ -58,6 +60,8 @@ class HandClient(QObject):
             command=self.pending.pop(row.get('id'),'?');self.last_response=time.monotonic()
             if row.get('ok'):
                 self.last_status=row['result'];self.status.emit(row['result'])
+                if command=='reconnect_hands':
+                    self.event.emit('手部故障已恢复，遥操使能关闭；点击 Start hand 才恢复跟随。')
             else:self.event.emit(f'[{command}] rejected: '+str(row.get('error')))
 
     def offline(self):

@@ -61,6 +61,8 @@ def runtime(monkeypatch,tmp_path):
     node.stop_validation=latch.trip
     r=FullHandRuntime.__new__(FullHandRuntime)
     r.node=node;r.latch=latch;r.raw=SeverityRawGate();r.config={'source':'litchibot','mode':'normal','token':'a'*64}
+    from adapters.litchibot.open_hand import SharpaOpenController
+    r.opening=SharpaOpenController(r)
     r.gate=TargetGate(allow_dry_run=True,max_age_s=.2,max_speed_rad_s=.5)
     r.publishers={s:SimpleNamespace(publish=Mock()) for s in ('left','right')};r.delta_path=tmp_path/'stats.json'
     sequences={'left':0,'right':0}

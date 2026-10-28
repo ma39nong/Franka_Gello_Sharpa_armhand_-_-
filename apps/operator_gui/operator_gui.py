@@ -279,6 +279,11 @@ class OperatorWindow(QMainWindow):
             self.arm_reconnect_action = QAction("重新连接机械臂（修复连接 / Exec / FCI 后）", self)
             self.arm_reconnect_action.triggered.connect(self._reconnect_arms)
             connection_menu.addAction(self.arm_reconnect_action)
+            if self.full_config.get('source')=='manus' and self.full_config.get('mode') in ('normal','fake'):
+                self.hand_reconnect_action = QAction('恢复手部连接 / 故障（手套连接后）', self)
+                self.hand_reconnect_action.triggered.connect(self._reconnect_hands)
+                self.hand_reconnect_action.setEnabled(False)
+                connection_menu.addAction(self.hand_reconnect_action)
         connection_menu.addSeparator()
         quit_action = QAction("Quit", self)
         quit_action.setShortcut("Ctrl+Q")
@@ -913,6 +918,11 @@ class OperatorWindow(QMainWindow):
         from teleop_runtime.full_launcher import notify_full_session
         sent=notify_full_session(self.full_config['token'],command='reconnect_arms')
         self.feedback.appendPlainText('已请求重连机械臂；就绪后仍需手动使能。' if sent else '重连请求失败，请检查统一启动入口。')
+
+    def _reconnect_hands(self) -> None:
+        if self.hand_client is None:return
+        self.hand_client.request('reconnect_hands')
+        self._hand_event('已请求恢复手部；检查双手输入和设备连接，通过后仍需手动 Start hand。')
 
     def _button(self, text: str, command: str, arguments=None) -> QPushButton:
         button = QPushButton(text)
@@ -1620,6 +1630,9 @@ class OperatorWindow(QMainWindow):
         previous=self.hand_status
         old_reason=previous.get('reason');self.hand_status=status
         if status.get('reason') and status.get('reason')!=old_reason:self._hand_event(status['reason'])
+        if hasattr(self,'hand_reconnect_action'):
+            self.hand_reconnect_action.setEnabled(status.get('phase')=='FAULT'
+                and not any(d.get('permit') for d in status.get('hands',{}).values()))
         for side,button in self.hand_engage_buttons.items():
             data=status.get('hands',{}).get(side,{})
             state=data.get('state','OFFLINE');permit=bool(data.get('permit'))
