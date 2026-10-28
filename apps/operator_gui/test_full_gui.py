@@ -342,7 +342,6 @@ def test_manus_unified_gui_collector_gap_stop_and_pedal_restart(tmp_path, monkey
         wait(lambda: window.collection_state == 'STOPPING')
         assert window.continuity_dialog is None
         assert not window.collection_record_button.isEnabled()
-        assert not window.collection_milestone_button.isEnabled()
         gate.set()
         wait(lambda: window.collection_status.get('quality') == '报错')
         assert window.collection_state == 'INCOMPLETE'
@@ -581,7 +580,7 @@ def test_offline_arms_disable_motion_and_task_management_preserves_layout(tmp_pa
         window._apply_status(dict(arm_available=False,status_line='ARMS UNAVAILABLE',
             active=dict(left=False,right=False),arm_hold=dict(left=False,right=False)))
         assert all(not button.isEnabled() for button in window.arm_engage_buttons.values())
-        assert not window.home_both_button.isEnabled() and not window.capture_ready_button.isEnabled()
+        assert not window.home_both_button.isEnabled()
         assert window.task_selector.isEnabled()
         assert 'unavailable' in window.arm_engage_buttons['left'].text()
         monkeypatch.setattr(QInputDialog,'getText',lambda *a:('离线新任务',True))

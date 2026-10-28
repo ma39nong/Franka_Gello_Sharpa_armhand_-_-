@@ -2,7 +2,7 @@
 
 本工程用于双 GELLO 增量遥操双 Franka FR3，并通过 MANUS 或 LitchiBot 手套控制
 双侧 Sharpa 灵巧手。当前分支 `common_entrance` 使用统一 Operator GUI，支持
-臂手独立启停、任务 Home / Ready、动作回放，以及独立的三相机与触觉数据采集。
+臂手独立启停、任务 Home，以及独立的三相机与触觉数据采集。
 
 **日常入口：`./ops/run/run_gello_full_teleop.sh --hand-source manus --hardware`。**
 LitchiBot 使用同一个入口切换手套来源。启动遥操不会自动启动相机或录制器。
@@ -142,15 +142,14 @@ LitchiBot full 模式当前不支持 `Open hand`。
 | `A` / `C` | 左臂 / 右臂 Hold 切换 |
 | `B` | 双臂 Home |
 | `L` | 开始 / 停止当前录制 episode |
-| `Space` | 录制中添加里程碑 |
-| `Q` / `W` / `E` | 已配置的相对末端动作槽 |
 
 快捷键和键盘式踏板需要 GUI 窗口获得焦点。Hold 只暂停机械臂跟随，不等于撤销
-机械臂使能。Home、Ready 及预设动作会驱动机械臂，执行前确认目标和工作区。
+机械臂使能。Home 会驱动机械臂，执行前确认目标和工作区。
 
-任务下拉框支持新增、删除任务；各任务独立保存左右臂 Home 和绝对轨迹，Ready 共用。
+Connection 菜单位于 System status 标题行右侧，连接、重连及退出功能保持不变。
+
+任务下拉框支持新增、删除任务；各任务独立保存左右臂 Home。
 `Record arm as Home` 只记录对应臂的实测关节角，不移动硬件；记录前先停止该臂。
-`Ready to Home` 执行前会核对双臂起点、轨迹首尾和当前任务 Home。
 任务与姿态保存在 `${TELEOP_DATA_ROOT}/operator_gui/`。
 
 若显示 `ARMS UNAVAILABLE`，GUI、独立手服务和采集/上传后台仍可保留，臂运动操作
@@ -175,7 +174,7 @@ recorder/cameras，两种录制入口只能选择一个运行。
 `--without-hands`，用于现场没有手套或 Sharpa 的臂/相机复验。
 
 1. 等待相机与数据流就绪，采集器显示 `READY`。
-2. 在 GUI 点击开始录制或踩 `L`，录制过程中用 `Space` 添加里程碑。
+2. 在 GUI 点击开始录制或踩 `L`。
 3. 再次点击停止或踩 `L`，等待 rosbag 收尾、完整性校验和质量评价。
 4. 完成质量评价及统一入口要求的双臂 Home 后，再开始下一段。
 
