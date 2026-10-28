@@ -1,0 +1,25 @@
+diff --git a/orbbec_camera/src/ob_camera_node_driver.cpp b/orbbec_camera/src/ob_camera_node_driver.cpp
+index 5b7775c..0a64804 100644
+--- a/orbbec_camera/src/ob_camera_node_driver.cpp
++++ b/orbbec_camera/src/ob_camera_node_driver.cpp
+@@ -308,7 +308,7 @@ void OBCameraNodeDriver::init() {
+   net_device_port_ = static_cast<int>(declare_parameter<int>("net_device_port", 0));
+   enumerate_net_device_ = declare_parameter<bool>("enumerate_net_device", false);
+   uvc_backend_ = declare_parameter<std::string>("uvc_backend", "libuvc");
+-  device_access_mode_str_ = declare_parameter<std::string>("device_access_mode", "Default");
++  device_access_mode_str_ = declare_parameter<std::string>("device_access_mode", "mr");
+   device_access_mode_ = stringToAccessMode(device_access_mode_str_);
+   RCLCPP_INFO_STREAM(logger_, "Device access mode: " << device_access_mode_str_ << " ("
+                                                      << device_access_mode_ << ")");
+diff --git a/orbbec_camera/launch/gemini435_le.launch.py b/orbbec_camera/launch/gemini435_le.launch.py
+index ce69576..3696d95 100644
+--- a/orbbec_camera/launch/gemini435_le.launch.py
++++ b/orbbec_camera/launch/gemini435_le.launch.py
+@@ -247,6 +247,7 @@ def generate_launch_description():
+         DeclareLaunchArgument('enable_firmware_log', default_value='false'),
+         DeclareLaunchArgument('gmsl_trigger_fps', default_value='3000'),
+         DeclareLaunchArgument('enable_gmsl_trigger', default_value='false'),
++        DeclareLaunchArgument('device_access_mode', default_value='mr'),
+         DeclareLaunchArgument('disparity_range_mode', default_value='-1'),
+         DeclareLaunchArgument('disparity_search_offset', default_value='-1'),
+         DeclareLaunchArgument('disparity_offset_config', default_value='false'),

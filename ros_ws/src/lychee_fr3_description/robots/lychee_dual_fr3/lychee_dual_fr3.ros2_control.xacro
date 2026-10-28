@@ -1,0 +1,136 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro
+    name="lychee_franka_arm_ros2_control"
+    params="robot_type
+            robot_ip
+            initial_positions
+            use_fake_hardware:=false
+            fake_sensor_commands:=false
+            gazebo:=false
+            hand:=false
+            gazebo_effort:=false
+            arm_prefix:=''
+            is_async:=false
+            thread_priority:=50
+            collision_behavior_lower_torque_thresholds_acceleration:=''
+            collision_behavior_upper_torque_thresholds_acceleration:=''
+            collision_behavior_lower_torque_thresholds_nominal:=''
+            collision_behavior_upper_torque_thresholds_nominal:=''
+            collision_behavior_lower_force_thresholds_acceleration:=''
+            collision_behavior_upper_force_thresholds_acceleration:=''
+            collision_behavior_lower_force_thresholds_nominal:=''
+            collision_behavior_upper_force_thresholds_nominal:=''">
+
+    <xacro:property name="use_fake_hardware_enabled" value="${use_fake_hardware == True or use_fake_hardware == 'true' or use_fake_hardware == 1}"/>
+    <xacro:property name="gazebo_enabled" value="${gazebo == True or gazebo == 'true' or gazebo == 1}"/>
+
+    <ros2_control name="${arm_prefix}FrankaHardwareInterface" type="system" is_async="${is_async}">
+      <xacro:if value="${is_async}">
+        <properties>
+          <async
+            scheduling_policy="detached"
+            print_warnings="true"
+            thread_priority="${thread_priority}"
+            manage_overruns="false"/>
+        </properties>
+      </xacro:if>
+
+      <hardware>
+        <param name="version">1.0.0</param>
+        <param name="robot_type">${robot_type}</param>
+        <param name="prefix">${arm_prefix}</param>
+
+        <xacro:if value="${use_fake_hardware_enabled}">
+          <plugin>mock_components/GenericSystem</plugin>
+          <param name="mock_sensor_commands">${fake_sensor_commands}</param>
+          <param name="state_following_offset">0.0</param>
+        </xacro:if>
+
+        <xacro:if value="${gazebo_enabled}">
+          <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+        </xacro:if>
+
+        <xacro:if value="${not use_fake_hardware_enabled and not gazebo_enabled}">
+          <plugin>franka_hardware/FrankaHardwareInterface</plugin>
+          <param name="robot_ip">${robot_ip}</param>
+          <param name="arm_prefix">${arm_prefix}</param>
+          <xacro:if value="${collision_behavior_lower_torque_thresholds_acceleration != ''}">
+            <param name="collision_behavior.lower_torque_thresholds_acceleration">${collision_behavior_lower_torque_thresholds_acceleration}</param>
+            <param name="collision_behavior.upper_torque_thresholds_acceleration">${collision_behavior_upper_torque_thresholds_acceleration}</param>
+            <param name="collision_behavior.lower_torque_thresholds_nominal">${collision_behavior_lower_torque_thresholds_nominal}</param>
+            <param name="collision_behavior.upper_torque_thresholds_nominal">${collision_behavior_upper_torque_thresholds_nominal}</param>
+            <param name="collision_behavior.lower_force_thresholds_acceleration">${collision_behavior_lower_force_thresholds_acceleration}</param>
+            <param name="collision_behavior.upper_force_thresholds_acceleration">${collision_behavior_upper_force_thresholds_acceleration}</param>
+            <param name="collision_behavior.lower_force_thresholds_nominal">${collision_behavior_lower_force_thresholds_nominal}</param>
+            <param name="collision_behavior.upper_force_thresholds_nominal">${collision_behavior_upper_force_thresholds_nominal}</param>
+          </xacro:if>
+        </xacro:if>
+      </hardware>
+
+      <xacro:macro name="configure_joint" params="joint_name initial_position">
+        <joint name="${joint_name}">
+          <command_interface name="position"/>
+          <command_interface name="velocity"/>
+          <xacro:if value="${not gazebo_enabled or gazebo_effort == 1}">
+            <command_interface name="effort"/>
+          </xacro:if>
+
+          <state_interface name="position">
+            <xacro:if value="${use_fake_hardware_enabled or gazebo_enabled}">
+              <param name="initial_value">${initial_position}</param>
+            </xacro:if>
+          </state_interface>
+          <state_interface name="velocity"/>
+          <state_interface name="effort"/>
+        </joint>
+      </xacro:macro>
+
+      <xacro:configure_joint joint_name="${arm_prefix}${robot_type}_joint1" initial_position="${initial_positions.joint1}"/>
+      <xacro:configure_joint joint_name="${arm_prefix}${robot_type}_joint2" initial_position="${initial_positions.joint2}"/>
+      <xacro:configure_joint joint_name="${arm_prefix}${robot_type}_joint3" initial_position="${initial_positions.joint3}"/>
+      <xacro:configure_joint joint_name="${arm_prefix}${robot_type}_joint4" initial_position="${initial_positions.joint4}"/>
+      <xacro:configure_joint joint_name="${arm_prefix}${robot_type}_joint5" initial_position="${initial_positions.joint5}"/>
+      <xacro:configure_joint joint_name="${arm_prefix}${robot_type}_joint6" initial_position="${initial_positions.joint6}"/>
+      <xacro:configure_joint joint_name="${arm_prefix}${robot_type}_joint7" initial_position="${initial_positions.joint7}"/>
+
+      <xacro:if value="${gazebo_enabled and hand}">
+        <xacro:configure_joint joint_name="${arm_prefix}${robot_type}_finger_joint1" initial_position="0.0"/>
+      </xacro:if>
+
+      <xacro:macro name="general_purpose_io" params="prefix command_interface index">
+        <gpio name="${arm_prefix}${prefix}">
+          <command_interface name="${command_interface}"/>
+          <param name="index">${index}</param>
+        </gpio>
+      </xacro:macro>
+
+      <xacro:general_purpose_io prefix="vx" command_interface="cartesian_velocity" index="0"/>
+      <xacro:general_purpose_io prefix="vy" command_interface="cartesian_velocity" index="1"/>
+      <xacro:general_purpose_io prefix="vz" command_interface="cartesian_velocity" index="2"/>
+      <xacro:general_purpose_io prefix="wx" command_interface="cartesian_velocity" index="3"/>
+      <xacro:general_purpose_io prefix="wy" command_interface="cartesian_velocity" index="4"/>
+      <xacro:general_purpose_io prefix="wz" command_interface="cartesian_velocity" index="5"/>
+
+      <xacro:macro name="loop" params="i">
+        <xacro:unless value="${i == 16}">
+          <xacro:general_purpose_io prefix="${i}" command_interface="cartesian_pose_command" index="${i}"/>
+          <xacro:loop i="${i + 1}"/>
+        </xacro:unless>
+      </xacro:macro>
+      <xacro:loop i="0"/>
+
+      <xacro:general_purpose_io prefix="joint_3_position" command_interface="elbow_command" index="0"/>
+      <xacro:general_purpose_io prefix="joint_4_sign" command_interface="elbow_command" index="1"/>
+    </ros2_control>
+
+    <xacro:if value="${gazebo_enabled}">
+      <gazebo>
+        <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+          <parameters>$(find franka_gazebo_bringup)/config/franka_gazebo_controllers.yaml</parameters>
+        </plugin>
+      </gazebo>
+    </xacro:if>
+  </xacro:macro>
+</robot>

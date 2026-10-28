@@ -1,0 +1,77 @@
+# common params
+device_access_mode: "ca"  # Control access for the cam0 recording owner; allows read-only monitors
+enable_d2c_viewer: false
+enable_point_cloud: false
+enable_colored_point_cloud: false
+enable_ldp: false
+enable_laser: false
+
+# pcd
+ordered_pc: false
+point_cloud_decimation_filter_factor: 2
+
+# enable_laser: true
+interleave_ae_mode: "laser"
+interleave_frame_enable: false
+interleave_skip_enable: false
+interleave_skip_index: 1
+time_domain: "global" # global, device, system
+enable_sync_host_time: true
+
+trigger_out_enabled: true
+frames_per_trigger: 0
+software_trigger_period: 0
+
+# color params
+enable_color: true
+color_width: 640
+color_height: 400
+# CP4N5630008Z exposes color/640_400_20_mjpg over RTSP. The matching
+# resolution preset must be selected before the SDK enumerates profiles.
+color_fps: 20
+color_format: "ANY"
+enable_color_auto_exposure: true
+color_exposure: 30 # 3ms
+color_gain: 16 # -1 default
+enable_color_undistortion: false
+
+# raw depth params
+# Preserve the native 16-bit samples; alignment remains an offline choice.
+enable_depth: true
+depth_width: 640
+depth_height: 400
+depth_fps: 20
+depth_format: "Y16"
+
+# The 435Le SDK filters stream profiles using this device-side preset. Without
+# it, the default 1280x800 preset hides the otherwise valid 640x400@20 streams.
+preset_resolution_config: "640, 400, 1, 1"
+
+depth_registration: false
+align_mode: "HW"
+align_target_stream: "COLOR"
+enable_depth_undistortion: false
+
+# left ir params
+enable_left_ir: false
+left_ir_width: 0
+left_ir_height: 0
+left_ir_fps: 0
+left_ir_format: "ANY"
+enable_ir_auto_exposure: true
+ir_exposure: 3000 # 3ms
+ir_gain: 16 # -1 default
+
+# right ir params
+enable_right_ir: false
+right_ir_width: 0
+right_ir_height: 0
+right_ir_fps: 0
+right_ir_format: "ANY"
+
+# ir params
+# enable_ir: true
+# ir_width: 0
+# ir_height: 0
+# ir_fps: 0
+# ir_format: "ANY"

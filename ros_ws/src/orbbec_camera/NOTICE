@@ -1,0 +1,19 @@
+Orbbec Gemini 435Le retained vendor closure
+
+ROS wrapper source license:
+  Copyright 2024 Orbbec Ltd.
+  Apache License 2.0
+  https://github.com/orbbec/OrbbecSDK_ROS2/tree/v2-main
+
+Bundled SDK version: 2.8.6
+SDK source/release license: MIT with separately licensed third-party libraries
+and proprietary extensions.
+  https://github.com/orbbec/OrbbecSDK_v2/tree/v2.8.6
+
+The SDK license and EULA are preserved under SDK/LICENSE.txt and
+SDK/End User License Agreement.txt. This notice does not replace either text.
+
+This retained package was imported from the local Harvest workspace at commit
+962137571e5c91e7c4f9cf34952233e3365943eb. The original upstream revision and
+local license-gating changes are recorded in
+data_collection/docs/ORBBEC_PROVENANCE.md.

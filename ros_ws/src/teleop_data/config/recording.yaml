@@ -1,0 +1,72 @@
+schema_version: franka_linker.teleop.raw.v2
+data_root: /data/episodes
+storage_id: sqlite3
+
+hands:
+  left:
+    model: g20
+  right:
+    model: o30i
+
+conversion:
+  fps: 30
+
+replay:
+  speed: 1.0
+  preposition_speed: 0.1
+  hand_preposition_speed:
+    left: 100.0
+    right: 1.0
+  rate: 100.0
+  state_timeout: 0.25
+  discovery_timeout: 10.0
+
+topics:
+  left_arm_state:
+    topic: /left/franka/joint_states
+    type: sensor_msgs/msg/JointState
+    required: true
+  right_arm_state:
+    topic: /right/franka/joint_states
+    type: sensor_msgs/msg/JointState
+    required: true
+  source_arm_command:
+    topic: /teleop/arm_commands
+    type: teleop_interfaces/msg/ArmCommand
+    required: true
+  validated_arm_command:
+    topic: /teleop/validated_arm_commands
+    type: sensor_msgs/msg/JointState
+    required: true
+  left_hand_state:
+    topic: /cb_left_hand_state
+    type: sensor_msgs/msg/JointState
+    required: true
+  right_hand_state:
+    topic: /cb_right_hand_state
+    type: sensor_msgs/msg/JointState
+    required: true
+  left_hand_action:
+    topic: /cb_left_hand_control_cmd
+    type: sensor_msgs/msg/JointState
+    required: true
+  right_hand_action:
+    topic: /cb_right_hand_control_cmd
+    type: sensor_msgs/msg/JointState
+    required: true
+  camera_color:
+    topic: /camera/color/image_raw
+    type: sensor_msgs/msg/Image
+    required: true
+  camera_color_info:
+    topic: /camera/color/camera_info
+    type: sensor_msgs/msg/CameraInfo
+    required: true
+  camera_depth:
+    topic: /camera/depth/image_raw
+    type: sensor_msgs/msg/Image
+    required: true
+  camera_depth_info:
+    topic: /camera/depth/camera_info
+    type: sensor_msgs/msg/CameraInfo
+    required: true

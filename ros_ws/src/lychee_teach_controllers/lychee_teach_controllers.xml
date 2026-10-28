@@ -1,0 +1,11 @@
+<library path="lychee_teach_controllers">
+  <class
+    name="lychee_teach_controllers/ZeroEffortTeachController"
+    type="lychee_teach_controllers::ZeroEffortTeachController"
+    base_class_type="controller_interface::ControllerInterface">
+    <description>
+      Claims one FR3 arm's effort interfaces and continuously commands zero
+      effort for hand-guided gravity-compensation teaching.
+    </description>
+  </class>
+</library>

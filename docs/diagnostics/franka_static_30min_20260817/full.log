@@ -1,0 +1,53 @@
+[taskset-6] [INFO] [1786945659.011666522] [right.controller_manager]: Loading controller 'joint_impedance_controller'
+[spawner-12] [INFO] [1786945659.026369759] [right.spawner_joint_impedance_controller]: [94mLoaded [1mjoint_impedance_controller[0m
+[taskset-6] [INFO] [1786945659.027408278] [right.controller_manager]: Configuring controller 'joint_impedance_controller'
+[spawner-12] [INFO] [1786945659.037381682] [right.spawner_joint_impedance_controller]: [92mConfigured and activated [1mjoint_impedance_controller[0m
+[INFO] [spawner-12]: process has finished cleanly [pid 258]
+[INFO] [launch.user]: Right joint-impedance controller activation completed.
+[taskset-2] [INFO] [1786945659.535651808] [left.joint_impedance_controller]: Holding current position while waiting for valid joint commands.
+[taskset-6] [INFO] [1786945660.029557282] [right.joint_impedance_controller]: Holding current position while waiting for valid joint commands.
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [reset_to_initial_pose.py-10]: sending signal 'SIGINT' to process[reset_to_initial_pose.py-10]
+[INFO] [taskset-6]: sending signal 'SIGINT' to process[taskset-6]
+[INFO] [robot_state_publisher-5]: sending signal 'SIGINT' to process[robot_state_publisher-5]
+[INFO] [taskset-2]: sending signal 'SIGINT' to process[taskset-2]
+[INFO] [robot_state_publisher-1]: sending signal 'SIGINT' to process[robot_state_publisher-1]
+[robot_state_publisher-5] [INFO] [1786947478.923038667] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[robot_state_publisher-1] [INFO] [1786947478.929631269] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[taskset-6] [INFO] [1786947478.940511476] [right.controller_manager]: Shutdown request received....
+[taskset-6] [INFO] [1786947478.940576519] [right.controller_manager]: Shutting down all controllers in the controller manager.
+[taskset-6] [INFO] [1786947478.940589555] [right.controller_manager]: Deactivating controller 'joint_state_broadcaster'
+[taskset-6] [INFO] [1786947478.940608897] [right.controller_manager]: Shutting down controller 'joint_state_broadcaster'
+[taskset-6] [INFO] [1786947478.940621448] [right.controller_manager]: Deactivating controller 'franka_robot_state_broadcaster'
+[taskset-6] [INFO] [1786947478.940629623] [right.controller_manager]: Shutting down controller 'franka_robot_state_broadcaster'
+[taskset-6] [INFO] [1786947478.940637131] [right.controller_manager]: Deactivating controller 'joint_impedance_controller'
+[taskset-6] [INFO] [1786947478.940648514] [right.controller_manager]: Shutting down controller 'joint_impedance_controller'
+[taskset-6] [INFO] [1786947478.940660666] [resource_manager]: 'deactivate' hardware 'right__FrankaHardwareInterface' 
+[taskset-6] [INFO] [1786947478.940663965] [FrankaHardwareInterface]: trying to Stop...
+[taskset-2] [INFO] [1786947478.942159392] [left.controller_manager]: Shutdown request received....
+[taskset-2] [INFO] [1786947478.942365375] [left.controller_manager]: Shutting down all controllers in the controller manager.
+[taskset-2] [INFO] [1786947478.942504481] [left.controller_manager]: Deactivating controller 'franka_robot_state_broadcaster'
+[taskset-2] [INFO] [1786947478.942631641] [left.controller_manager]: Shutting down controller 'franka_robot_state_broadcaster'
+[taskset-2] [INFO] [1786947478.942753423] [left.controller_manager]: Deactivating controller 'joint_state_broadcaster'
+[taskset-2] [INFO] [1786947478.942765400] [left.controller_manager]: Shutting down controller 'joint_state_broadcaster'
+[taskset-2] [INFO] [1786947478.942773625] [left.controller_manager]: Deactivating controller 'joint_impedance_controller'
+[taskset-2] [INFO] [1786947478.942783312] [left.controller_manager]: Shutting down controller 'joint_impedance_controller'
+[taskset-2] [INFO] [1786947478.942794312] [resource_manager]: 'deactivate' hardware 'left__FrankaHardwareInterface' 
+[taskset-2] [INFO] [1786947478.942797599] [FrankaHardwareInterface]: trying to Stop...
+[taskset-6] [INFO] [1786947478.943412004] [FrankaHardwareInterface]: Stopped
+[taskset-6] [INFO] [1786947478.943418573] [resource_manager]: Successful 'deactivate' of hardware 'right__FrankaHardwareInterface'
+[taskset-6] [INFO] [1786947478.943420541] [resource_manager]: 'shutdown' hardware 'right__FrankaHardwareInterface' 
+[taskset-6] [INFO] [1786947478.943422676] [resource_manager]: Successful 'shutdown' of hardware 'right__FrankaHardwareInterface'
+[taskset-6] [INFO] [1786947478.943424538] [right.controller_manager]: Shutting down the controller manager.
+[taskset-2] [INFO] [1786947478.945325859] [FrankaHardwareInterface]: Stopped
+[taskset-2] [INFO] [1786947478.945335137] [resource_manager]: Successful 'deactivate' of hardware 'left__FrankaHardwareInterface'
+[taskset-2] [INFO] [1786947478.945337764] [resource_manager]: 'shutdown' hardware 'left__FrankaHardwareInterface' 
+[taskset-2] [INFO] [1786947478.945340262] [resource_manager]: Successful 'shutdown' of hardware 'left__FrankaHardwareInterface'
+[taskset-2] [INFO] [1786947478.945342586] [left.controller_manager]: Shutting down the controller manager.
+[INFO] [robot_state_publisher-5]: process has finished cleanly [pid 39]
+[INFO] [robot_state_publisher-1]: process has finished cleanly [pid 31]
+[INFO] [reset_to_initial_pose.py-10]: process has finished cleanly [pid 62]
+[INFO] [taskset-2]: process has finished cleanly [pid 33]
+[INFO] [launch]: process[taskset-2] was required: shutting down launched system
+[INFO] [taskset-6]: process has finished cleanly [pid 41]
+[INFO] [launch]: process[taskset-6] was required: shutting down launched system

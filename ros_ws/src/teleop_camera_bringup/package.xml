@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>teleop_camera_bringup</name>
+  <version>0.1.0</version>
+  <description>License-gated three-Orbbec read-only camera bringup.</description>
+  <maintainer email="maintainers@example.com">Pico arm-hand teleop maintainers</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>orbbec_camera</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

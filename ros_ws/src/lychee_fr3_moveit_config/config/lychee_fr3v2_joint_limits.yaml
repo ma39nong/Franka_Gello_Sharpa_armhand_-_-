@@ -1,0 +1,43 @@
+joint_limits:
+  left_fr3v2_joint1:
+    has_acceleration_limits: true
+    max_acceleration: 3.75
+  left_fr3v2_joint2:
+    has_acceleration_limits: true
+    max_acceleration: 1.875
+  left_fr3v2_joint3:
+    has_acceleration_limits: true
+    max_acceleration: 2.5
+  left_fr3v2_joint4:
+    has_acceleration_limits: true
+    max_acceleration: 3.125
+  left_fr3v2_joint5:
+    has_acceleration_limits: true
+    max_acceleration: 3.75
+  left_fr3v2_joint6:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  left_fr3v2_joint7:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  right_fr3v2_joint1:
+    has_acceleration_limits: true
+    max_acceleration: 3.75
+  right_fr3v2_joint2:
+    has_acceleration_limits: true
+    max_acceleration: 1.875
+  right_fr3v2_joint3:
+    has_acceleration_limits: true
+    max_acceleration: 2.5
+  right_fr3v2_joint4:
+    has_acceleration_limits: true
+    max_acceleration: 3.125
+  right_fr3v2_joint5:
+    has_acceleration_limits: true
+    max_acceleration: 3.75
+  right_fr3v2_joint6:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  right_fr3v2_joint7:
+    has_acceleration_limits: true
+    max_acceleration: 5.0

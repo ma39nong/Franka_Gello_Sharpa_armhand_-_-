@@ -1,0 +1,59 @@
+# Right hand only, for when the left side cannot be driven.
+#
+# Run from this directory, like every other compose invocation in
+# docs/HARDWARE_DEPLOY.md:
+#
+#   cd docker
+#   docker compose -f compose.yaml -f compose.right-only.yaml up hand-control
+#
+# The base compose file's defaults describe the validated physical pair: left
+# G20, right O30i. When the left hand is something the safety bridge has no
+# contract for -- an L20, or nothing at all -- `sides:=both` fails the launch
+# before any driver starts, which is the intended behaviour: hands.launch.py
+# calls create_hand_profile() for every selected side precisely so an
+# unsupported hand is refused up front rather than half-driven.
+#
+# `sides:=right` narrows the selection instead of weakening that check. The
+# left model is then never validated and no left driver is spawned, so
+# left_model below is inert and kept only to match the base file.
+#
+# This is a temporary shape, not a new default: it belongs beside the base file
+# rather than edited into it, so the checked-in configuration keeps describing
+# the robot as built.
+
+services:
+  hand-control:
+    command:
+      - ros2
+      - launch
+      - linker_hand_bridge
+      - hands.launch.py
+      - sides:=right
+      # Inert under sides:=right; kept matching the base file, where the left
+      # mount is now also an O30i (2026-08-04).
+      - left_model:=o30i
+      - right_model:=o30i
+      # This host has TWO identical CANFD analysers (a8fa:8598, serials
+      # F0802074338B5231 and F080207737804130) and the driver picks one by
+      # integer index, which is USB enumeration order -- not stable across
+      # replugs or a hand swap. Measured 2026-08-04: index 1 is the O30i
+      # (uid LHO30i-01.1-012-R-Z-3-A, RIGHT); index 0 opens and reports
+      # "有效关节 20 个 / 初始化完成" but answers no product-info request,
+      # because those two messages verify nothing -- ACTIVE_JOINTS is a static
+      # 20-entry list and any adapter opens. The identity read is the first
+      # real check, and on the wrong index it fails as
+      # `connected device is not O30i: ''`.
+      #
+      # Re-derive after any replug rather than guessing:
+      #   docker compose -f compose.yaml -f compose.right-only.yaml run --rm \
+      #     hand-control python3 /workspace/franka_upper_body_teleop/ros_ws/src/\
+      # linker_hand_ros2_sdk/scripts/identify_canfd_devices.py
+      - o30_canfd_device:=1
+      - o30_calibration_verified:=true
+      - max_command_rate:=1500.0
+      # Speed/torque apply to the G20 only; the O30i profile has no startup
+      # settings. Kept identical to the base file so the two differ in exactly
+      # one argument.
+      - initial_speed:=255
+      - initial_torque:=200
+      - initial_thumb_torque:=250

@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+.ros/
+build/
+install/
+log/
+Log/
+/log.txt
+docker/.env
+docker/.env.before-install.*
+portable_deps/*
+!portable_deps/README.md
+data/
+data_collection/config/cameras.yaml

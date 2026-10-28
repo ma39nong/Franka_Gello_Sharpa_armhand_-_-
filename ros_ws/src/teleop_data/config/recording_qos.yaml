@@ -1,0 +1,50 @@
+/left/franka/joint_states:
+  history: keep_last
+  depth: 5
+  reliability: best_effort
+  durability: volatile
+/right/franka/joint_states:
+  history: keep_last
+  depth: 5
+  reliability: best_effort
+  durability: volatile
+/cb_left_hand_state:
+  history: keep_last
+  depth: 5
+  reliability: reliable
+  durability: volatile
+/cb_right_hand_state:
+  history: keep_last
+  depth: 5
+  reliability: reliable
+  durability: volatile
+/cb_left_hand_control_cmd:
+  history: keep_last
+  depth: 5
+  reliability: reliable
+  durability: volatile
+/cb_right_hand_control_cmd:
+  history: keep_last
+  depth: 5
+  reliability: reliable
+  durability: volatile
+/camera/color/image_raw:
+  history: keep_last
+  depth: 5
+  reliability: best_effort
+  durability: volatile
+/camera/color/camera_info:
+  history: keep_last
+  depth: 5
+  reliability: best_effort
+  durability: volatile
+/camera/depth/image_raw:
+  history: keep_last
+  depth: 5
+  reliability: best_effort
+  durability: volatile
+/camera/depth/camera_info:
+  history: keep_last
+  depth: 5
+  reliability: best_effort
+  durability: volatile

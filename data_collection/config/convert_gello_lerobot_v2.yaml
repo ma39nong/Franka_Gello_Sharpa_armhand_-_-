@@ -1,0 +1,39 @@
+contract_version: 1
+lerobot_version: v2.0
+teleoperator: gello
+fps: 30
+task: teleoperation
+# A bag with a milestone produces a prefix episode and a full episode.
+# Use full or milestones to export separate datasets. Descriptions can be filled
+# in later, e.g. segment_tasks: {milestone_1: "Pick up the object", full: "Place it"}.
+segments: all
+segment_tasks: {}
+robot_type: dual_fr3_wuji
+sampling:
+  frequency_hz: 30
+  max_staleness_ms: 150
+  trim_start_sec: 1.0
+  trim_end_sec: 0.2
+
+# Keep each source camera at its native rate. The 30 Hz dataset rows reference
+# media by timestamp; cam0 frames are stored once rather than encoded three times.
+videos:
+  observation.images.cam0:
+    topic: /cam0/color/image_raw
+    type: sensor_msgs/msg/Image
+    fps: 20
+  observation.images.cam1:
+    topic: /cam1/color/image_raw
+    type: sensor_msgs/msg/Image
+    fps: 30
+  observation.images.cam2:
+    topic: /cam2/color/image_raw
+    type: sensor_msgs/msg/Image
+    fps: 30
+
+depth_images:
+  observation.depths.cam0:
+    topic: /cam0/depth/image_raw
+    type: sensor_msgs/msg/Image
+    format: raw16
+    fps: 20

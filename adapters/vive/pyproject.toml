@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vive-tracker-teleop"
+version = "0.1.0"
+description = "HTC VIVE Tracker arm-pose adapter for bimanual Franka teleoperation"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "numpy>=2.0,<2.4",
+    "openvr==2.12.1401",
+    "PyYAML>=6,<7",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

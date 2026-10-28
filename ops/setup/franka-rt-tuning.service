@@ -1,0 +1,14 @@
+[Unit]
+Description=Franka FCI CPU frequency and IRQ tuning
+After=systemd-udev-settle.service
+Before=docker.service
+Wants=systemd-udev-settle.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/franka-rt-tuning start
+ExecStop=/usr/local/sbin/franka-rt-tuning stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

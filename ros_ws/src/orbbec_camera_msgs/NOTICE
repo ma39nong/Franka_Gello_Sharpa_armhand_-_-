@@ -1,0 +1,12 @@
+Orbbec camera interface definitions
+
+Copyright 2024 Orbbec Ltd.
+Licensed under the Apache License 2.0 preserved in LICENSE.
+
+Upstream project:
+  https://github.com/orbbec/OrbbecSDK_ROS2/tree/v2-main
+
+This retained package was imported from the local Harvest workspace at commit
+962137571e5c91e7c4f9cf34952233e3365943eb. The original upstream revision and
+retained license hashes are recorded in
+data_collection/docs/ORBBEC_PROVENANCE.md.

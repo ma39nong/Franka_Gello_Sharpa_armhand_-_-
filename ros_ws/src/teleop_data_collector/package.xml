@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>teleop_data_collector</name>
+  <version>0.1.0</version>
+  <description>Read-only episode rosbag recorder and manual LeRobot v2 converter.</description>
+  <maintainer email="maintainers@example.com">Pico arm-hand teleop maintainers</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>teleop_core</depend>
+  <depend>teleop_interfaces</depend>
+  <exec_depend>ros2bag</exec_depend>
+  <exec_depend>rosbag2_py</exec_depend>
+  <exec_depend>rosidl_runtime_py</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
+  <!-- pyarrow is pinned by the project Dockerfiles because Ubuntu 22.04 and
+       rosdep do not provide a python3-pyarrow key/package. -->
+  <exec_depend>python3-pip</exec_depend>
+  <test_depend>python3-pytest</test_depend>
+  <export><build_type>ament_python</build_type></export>
+</package>

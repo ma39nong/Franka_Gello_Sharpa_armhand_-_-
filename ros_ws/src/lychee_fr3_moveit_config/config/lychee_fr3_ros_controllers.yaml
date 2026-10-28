@@ -1,0 +1,81 @@
+/**:
+  controller_manager:
+    ros__parameters:
+      update_rate: 1000
+      thread_priority: 98
+      overruns:
+        manage: false
+        print_warnings: false
+
+      left_arm_controller:
+        type: joint_trajectory_controller/JointTrajectoryController
+
+      right_arm_controller:
+        type: joint_trajectory_controller/JointTrajectoryController
+
+      left_teach_controller:
+        type: lychee_teach_controllers/ZeroEffortTeachController
+
+      right_teach_controller:
+        type: lychee_teach_controllers/ZeroEffortTeachController
+
+      joint_state_broadcaster:
+        type: joint_state_broadcaster/JointStateBroadcaster
+
+  left_arm_controller:
+    ros__parameters:
+      command_interfaces:
+        - effort
+      state_interfaces:
+        - position
+        - velocity
+      joints:
+        - left_fr3_joint1
+        - left_fr3_joint2
+        - left_fr3_joint3
+        - left_fr3_joint4
+        - left_fr3_joint5
+        - left_fr3_joint6
+        - left_fr3_joint7
+      gains:
+        left_fr3_joint1: {p: 600.0, d: 30.0, i: 1.0, i_clamp: 1.0}
+        left_fr3_joint2: {p: 600.0, d: 30.0, i: 1.0, i_clamp: 1.0}
+        left_fr3_joint3: {p: 600.0, d: 30.0, i: 1.0, i_clamp: 1.0}
+        left_fr3_joint4: {p: 600.0, d: 30.0, i: 1.0, i_clamp: 1.0}
+        left_fr3_joint5: {p: 250.0, d: 10.0, i: 1.0, i_clamp: 1.0}
+        left_fr3_joint6: {p: 150.0, d: 10.0, i: 1.0, i_clamp: 1.0}
+        left_fr3_joint7: {p: 50.0, d: 5.0, i: 1.0, i_clamp: 1.0}
+
+  right_arm_controller:
+    ros__parameters:
+      command_interfaces:
+        - effort
+      state_interfaces:
+        - position
+        - velocity
+      joints:
+        - right_fr3_joint1
+        - right_fr3_joint2
+        - right_fr3_joint3
+        - right_fr3_joint4
+        - right_fr3_joint5
+        - right_fr3_joint6
+        - right_fr3_joint7
+      gains:
+        right_fr3_joint1: {p: 600.0, d: 30.0, i: 1.0, i_clamp: 1.0}
+        right_fr3_joint2: {p: 600.0, d: 30.0, i: 1.0, i_clamp: 1.0}
+        right_fr3_joint3: {p: 600.0, d: 30.0, i: 1.0, i_clamp: 1.0}
+        right_fr3_joint4: {p: 600.0, d: 30.0, i: 1.0, i_clamp: 1.0}
+        right_fr3_joint5: {p: 250.0, d: 10.0, i: 1.0, i_clamp: 1.0}
+        right_fr3_joint6: {p: 150.0, d: 10.0, i: 1.0, i_clamp: 1.0}
+        right_fr3_joint7: {p: 50.0, d: 5.0, i: 1.0, i_clamp: 1.0}
+
+  left_teach_controller:
+    ros__parameters:
+      robot_type: "fr3"
+      arm_prefix: "left"
+
+  right_teach_controller:
+    ros__parameters:
+      robot_type: "fr3"
+      arm_prefix: "right"

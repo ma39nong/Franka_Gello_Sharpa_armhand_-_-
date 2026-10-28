@@ -1,0 +1,362 @@
+x-runtime: &runtime
+  image: franka-upper-body-teleop:latest
+  network_mode: host
+  ipc: host
+  # Default every non-FCI service to housekeeping CPUs.  Real robot services
+  # override this explicitly below; keeping the default here prevents a new
+  # helper container from silently entering the isolated realtime cores.
+  cpuset: ${HOUSEKEEPING_CPUSET:?Missing HOUSEKEEPING_CPUSET in docker/.env}
+  volumes:
+    - ..:/workspace/franka_upper_body_teleop
+    - ${TELEOP_DATA_ROOT:?Missing TELEOP_DATA_ROOT in docker/.env}:/data
+  environment:
+    # All DDS participants live on this machine. Binding every interface let
+    # Keep RTPS multicast/unicast off the dedicated FCI robot subnets
+    # (172.16.0/1.x).  The prior all-interface Fast DDS setup was correlated
+    # with intermittent state gaps and communication_constraints_violation.
+    # Cyclone DDS is selected explicitly for every service so participants do
+    # not silently fall back to the Humble default (Fast DDS).
+    - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    - CYCLONEDDS_URI=file:///workspace/franka_upper_body_teleop/config/cyclonedds.xml
+    - ROS_LOCALHOST_ONLY=1
+    - ROS_DOMAIN_ID=${TELEOP_ROS_DOMAIN_ID:?Missing TELEOP_ROS_DOMAIN_ID in docker/.env}
+  working_dir: /workspace/franka_upper_body_teleop
+
+services:
+  franka-control:
+    <<: *runtime
+    privileged: true
+    # ROS 2 launch performs its orderly node/controller shutdown on SIGINT.
+    # Docker's default SIGTERM left launch running until the timeout and then
+    # reported exit 137 even though the robots had already stopped.
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    # Teleop has a host-specific layout that keeps both controller managers
+    # off the physical cores used by the two FCI IRQs.
+    cpuset: ${FRANKA_TELEOP_CPUSET:?Missing FRANKA_TELEOP_CPUSET in docker/.env}
+    ulimits:
+      rtprio: 99
+      rttime: -1
+      memlock: -1
+    volumes:
+      - ..:/workspace/franka_upper_body_teleop
+      - ${TELEOP_DATA_ROOT:?Missing TELEOP_DATA_ROOT in docker/.env}:/data
+      - /dev:/dev
+    command:
+      - ros2
+      - launch
+      - franka_fr3_arm_controllers
+      - robot_control.launch.py
+      - robot_config:=${FRANKA_ROBOT_CONFIG:?Missing FRANKA_ROBOT_CONFIG in docker/.env}
+
+  fake-franka-control:
+    <<: *runtime
+    # Profiled so that a plain `docker compose up` starts the real workcell and
+    # never a second, fake command source next to it. Naming the service
+    # explicitly still works: compose activates a service's profiles when it is
+    # targeted by name.
+    profiles: [fake]
+    privileged: true
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    ulimits:
+      rtprio: 99
+      rttime: -1
+      memlock: -1
+    volumes:
+      - ..:/workspace/franka_upper_body_teleop
+      - ${TELEOP_DATA_ROOT:?Missing TELEOP_DATA_ROOT in docker/.env}:/data
+      - /dev:/dev
+    command:
+      - ros2
+      - launch
+      - franka_fr3_arm_controllers
+      - robot_control.launch.py
+      - robot_config:=/workspace/franka_upper_body_teleop/config/workcell/fake.yaml
+
+  hand-control:
+    <<: *runtime
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    # Privileged host networking exposes the two O30i USB-CANFD adapters.
+    # Defaults match the physical pair: O30i on BOTH sides (left swapped from
+    # G20 to O30i, 2026-08-04); the bridge listens on host UDP 5570.
+    privileged: true
+    command:
+      - ros2
+      - launch
+      - linker_hand_bridge
+      - hands.launch.py
+      - sides:=both
+      - left_model:=o30i
+      - right_model:=o30i
+      # Two adapters, selected by integer index = USB enumeration order.
+      # Measured 2026-08-04: index 1 is the RIGHT O30i
+      # (uid LHO30i-01.1-012-R-Z-3-A); the left is therefore expected on
+      # index 0 but has NOT yet answered an identity read -- confirm with
+      # identify_canfd_devices.py before relying on a dual launch. A wrong
+      # index fails cleanly at the driver's identity check
+      # ("connected O30i reports ..., expected LEFT").
+      - o30_canfd_device_left:=0
+      - o30_canfd_device_right:=1
+      # The validated default maps each O30i URDF joint range to ticks 0..255.
+      - o30_calibration_verified:=true
+      # abduction_invert stays at its default (false). The unified MANUS mode
+      # feeds the same L20 retargeter as the validated PICO path (offline check
+      # 2026-07-27: identical skeleton chirality in both sessions' logs), so the
+      # bridge's derived per-side polarity is already correct. The flag exists
+      # for senders with their own, unverified abduction convention.
+      # G20 slews at the full 1500 units/s; the O30i profile caps its own side
+      # at 12 rad/s regardless of this value.
+      - max_command_rate:=1500.0
+      # Speed/torque apply to the G20 only; the O30i profile has no startup
+      # settings.
+      - initial_speed:=255
+      - initial_torque:=200
+      - initial_thumb_torque:=250
+
+  hand-ui:
+    <<: *runtime
+    profiles: [hand-ui]
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - CYCLONEDDS_URI=file:///workspace/franka_upper_body_teleop/config/cyclonedds.xml
+      - ROS_LOCALHOST_ONLY=1
+      - ROS_DOMAIN_ID=${TELEOP_ROS_DOMAIN_ID:?Missing TELEOP_ROS_DOMAIN_ID in docker/.env}
+      - PYTHONPATH=/workspace/franka_upper_body_teleop/apps/hand_ui
+    command:
+      - python3
+      - -m
+      - barmate.apps.linker_hand_control
+      - --backend
+      - ros
+      - --left-model
+      - O30I
+      - --right-model
+      - O30I
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+
+  arm-ui:
+    <<: *runtime
+    profiles: [moveit]
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - CYCLONEDDS_URI=file:///workspace/franka_upper_body_teleop/config/cyclonedds.xml
+      - ROS_LOCALHOST_ONLY=1
+      - ROS_DOMAIN_ID=${TELEOP_ROS_DOMAIN_ID:?Missing TELEOP_ROS_DOMAIN_ID in docker/.env}
+      - PYTHONPATH=/workspace/franka_upper_body_teleop
+    command:
+      - python3
+      - -m
+      - apps.arm_ui
+      - --host
+      - 127.0.0.1
+      - --port
+      - "8081"
+      - --data-root
+      - /data/arm_ui
+      - --robot-type
+      - fr3
+
+  teleop-control:
+    <<: *runtime
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    command:
+      - ros2
+      - launch
+      - teleop_core
+      - control.launch.py
+      - config:=/workspace/franka_upper_body_teleop/config/modes/teleop_control.yaml
+
+  moveit-ik:
+    <<: *runtime
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    # Read-only MoveIt service for preset-action IK/collision prechecks during
+    # teleop. move_group.launch.py starts no ros2_control/controller manager.
+    # It inherits HOUSEKEEPING_CPUSET and stays off the Franka realtime cores.
+    command:
+      - ros2
+      - launch
+      - lychee_fr3_moveit_config
+      - move_group.launch.py
+      - robot_types:=['fr3','fr3']
+      - robot_ips:=['172.16.0.3','172.16.0.2']
+      - move_group_log_level:=warn
+
+  preset-ik:
+    <<: *runtime
+    # Long-lived Arm UI IK helper. Operator Q/W/E talks to this TCP server
+    # instead of `docker compose run --rm tools`, which was starving
+    # franka-control on the realtime CPUs.
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - CYCLONEDDS_URI=file:///workspace/franka_upper_body_teleop/config/cyclonedds.xml
+      - ROS_LOCALHOST_ONLY=1
+      - ROS_DOMAIN_ID=${TELEOP_ROS_DOMAIN_ID:?Missing TELEOP_ROS_DOMAIN_ID in docker/.env}
+      - PYTHONPATH=/workspace/franka_upper_body_teleop
+    command:
+      - python3
+      - -m
+      - apps.arm_ui.preset_ik_server
+      - --host
+      - 127.0.0.1
+      - --port
+      - "${PRESET_IK_PORT:-5591}"
+      - --data-root
+      - /data/arm_ui
+    depends_on:
+      - moveit-ik
+
+  moveit-fake:
+    <<: *runtime
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    profiles: [moveit]
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - CYCLONEDDS_URI=file:///workspace/franka_upper_body_teleop/config/cyclonedds.xml
+      - ROS_LOCALHOST_ONLY=1
+      - ROS_DOMAIN_ID=${TELEOP_ROS_DOMAIN_ID:?Missing TELEOP_ROS_DOMAIN_ID in docker/.env}
+      - DISPLAY=${DISPLAY:-}
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - ..:/workspace/franka_upper_body_teleop
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    command:
+      - ros2
+      - launch
+      - lychee_fr3_moveit_config
+      - moveit.launch.py
+      - robot_types:=['fr3','fr3']
+      - robot_ips:=['172.16.0.2','172.16.1.2']
+      - use_fake_hardware:=true
+      - fake_sensor_commands:=true
+      - use_rviz:=true
+
+  moveit-real:
+    <<: *runtime
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    profiles: [moveit]
+    privileged: true
+    cpuset: ${FRANKA_CPUSET:?Missing FRANKA_CPUSET in docker/.env}
+    ulimits:
+      rtprio: 99
+      rttime: -1
+      memlock: -1
+    volumes:
+      - ..:/workspace/franka_upper_body_teleop
+      - /dev:/dev
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - CYCLONEDDS_URI=file:///workspace/franka_upper_body_teleop/config/cyclonedds.xml
+      - ROS_LOCALHOST_ONLY=1
+      - ROS_DOMAIN_ID=${TELEOP_ROS_DOMAIN_ID:?Missing TELEOP_ROS_DOMAIN_ID in docker/.env}
+      - DISPLAY=${DISPLAY:-}
+      - QT_X11_NO_MITSHM=1
+    command:
+      - ros2
+      - launch
+      - lychee_fr3_moveit_config
+      - moveit.launch.py
+      - robot_types:=['fr3','fr3']
+      - robot_ips:=['172.16.0.2','172.16.1.2']
+      - use_fake_hardware:=false
+      - fake_sensor_commands:=false
+      - separate_controller_managers:=true
+      - use_rviz:=true
+      - configure_collision_behavior:=true
+
+  pico-bridge:
+    <<: *runtime
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    # Optional legacy arm input; mutually exclusive with the other UDP bridges.
+    profiles: [pico]
+    command:
+      - ros2
+      - launch
+      - pico_teleop_bridge
+      - pico.launch.py
+      - config:=/workspace/franka_upper_body_teleop/config/modes/pico.yaml
+      - source_id:=pico
+
+  gello-bridge:
+    <<: *runtime
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    # Default joint-input adapter. The host operator owns both GELLO serial
+    # ports and sends canonical 14-joint targets over the existing UDP link.
+    command:
+      - ros2
+      - launch
+      - pico_teleop_bridge
+      - pico.launch.py
+      - config:=/workspace/franka_upper_body_teleop/config/modes/pico.yaml
+      - source_id:=gello
+
+  vive-bridge:
+    <<: *runtime
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    profiles: [vive]
+    command:
+      - ros2
+      - launch
+      - pico_teleop_bridge
+      - pico.launch.py
+      - config:=/workspace/franka_upper_body_teleop/config/modes/pico.yaml
+      - source_id:=vive
+
+  orbbec:
+    <<: *runtime
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    # The project workspace also contains an Orbbec package for the separate
+    # three-camera collector. Prefer the patched vendor driver for this service.
+    command:
+      - bash
+      - -lc
+      - >-
+        unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH LD_LIBRARY_PATH
+        PYTHONPATH CMAKE_PREFIX_PATH &&
+        source /opt/ros/humble/setup.bash &&
+        source /opt/vendor_ws/install/setup.bash &&
+        exec ros2 launch
+        /workspace/franka_upper_body_teleop/ops/diagnostics/single_orbbec_network.launch.py
+
+  tools:
+    <<: *runtime
+    profiles: [tools]
+    stdin_open: true
+    tty: true
+    command: bash
+
+  data-collection:
+    <<: *runtime
+    # Camera drivers share one SDK mutex inside this container.  Do not reuse
+    # the host IPC namespace: a root-owned lock left by the standalone Orbbec
+    # service prevents this UID-mapped collection container from opening it.
+    ipc: private
+    # The shared /dev bind in the common runtime would otherwise re-expose the
+    # host's /dev/shm (and its root-owned Orbbec lock) despite private IPC.
+    tmpfs:
+      - /dev/shm
+    profiles: [collection]
+    privileged: true
+    stdin_open: true
+    tty: true
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    volumes:
+      - ..:/workspace/franka_upper_body_teleop
+      - ${TELEOP_DATA_ROOT:?Missing TELEOP_DATA_ROOT in docker/.env}:/data
+      - /dev:/dev
+    command:
+      - /workspace/franka_upper_body_teleop/ops/run/run_data_collection_container.sh

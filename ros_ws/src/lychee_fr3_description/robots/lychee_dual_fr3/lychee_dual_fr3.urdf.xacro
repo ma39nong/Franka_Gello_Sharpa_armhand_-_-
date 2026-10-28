@@ -1,0 +1,188 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="lychee_dual_fr3">
+
+  <xacro:include filename="$(find franka_description)/robots/common/franka_robot.xacro"/>
+  <xacro:include filename="$(find lychee_fr3_description)/robots/lychee_dual_fr3/lychee_dual_fr3.ros2_control.xacro"/>
+
+  <xacro:arg name="robot_types" default="['fr3v2','fr3v2']"/>
+  <xacro:property name="robot_types_list" value="${$(arg robot_types)}"/>
+
+  <xacro:arg name="arm_prefixes" default="['left','right']"/>
+  <xacro:property name="arm_prefixes_list" value="${$(arg arm_prefixes)}"/>
+
+  <xacro:arg name="robot_ips" default="['172.16.0.3','172.16.0.2']"/>
+  <xacro:property name="robot_ips_list" value="${$(arg robot_ips)}"/>
+
+  <xacro:arg name="no_prefix" default="false"/>
+  <xacro:arg name="hand" default="false"/>
+  <xacro:arg name="special_connection" default=""/>
+  <xacro:arg name="xyz_ee" default="0 0 0"/>
+  <xacro:arg name="rpy_ee" default="0 0 ${-pi/4}"/>
+  <xacro:arg name="tcp_xyz" default="0 0 0.1034"/>
+  <xacro:arg name="tcp_rpy" default="0 0 0"/>
+  <xacro:arg name="safety_distance" default="0.03"/>
+  <xacro:arg name="with_sc" default="false"/>
+  <xacro:arg name="ros2_control" default="false"/>
+  <xacro:arg name="use_fake_hardware" default="false"/>
+  <xacro:arg name="fake_sensor_commands" default="false"/>
+  <xacro:arg name="gazebo" default="false"/>
+  <xacro:arg name="gazebo_effort" default="false"/>
+  <xacro:arg name="description_pkg" default="franka_description"/>
+  <xacro:arg name="is_async" default="false"/>
+  <xacro:arg name="thread_priority" default="50"/>
+  <xacro:arg name="collision_behavior_lower_torque_thresholds_acceleration" default=""/>
+  <xacro:arg name="collision_behavior_upper_torque_thresholds_acceleration" default=""/>
+  <xacro:arg name="collision_behavior_lower_torque_thresholds_nominal" default=""/>
+  <xacro:arg name="collision_behavior_upper_torque_thresholds_nominal" default=""/>
+  <xacro:arg name="collision_behavior_lower_force_thresholds_acceleration" default=""/>
+  <xacro:arg name="collision_behavior_upper_force_thresholds_acceleration" default=""/>
+  <xacro:arg name="collision_behavior_lower_force_thresholds_nominal" default=""/>
+  <xacro:arg name="collision_behavior_upper_force_thresholds_nominal" default=""/>
+
+  <xacro:property name="home_positions" value="${xacro.load_yaml('$(find lychee_fr3_description)/config/home_positions.yaml')}"/>
+  <xacro:property name="selected_home_positions" value="${home_positions['dual_arm_45']}"/>
+
+  <xacro:property name="left_robot_type" value="${robot_types_list[0]}"/>
+  <xacro:property name="right_robot_type" value="${robot_types_list[1]}"/>
+  <xacro:property name="left_arm_prefix" value="${arm_prefixes_list[0]}"/>
+  <xacro:property name="right_arm_prefix" value="${arm_prefixes_list[1]}"/>
+  <xacro:property name="left_prefix" value="${left_arm_prefix + '_' if left_arm_prefix else ''}"/>
+  <xacro:property name="right_prefix" value="${right_arm_prefix + '_' if right_arm_prefix else ''}"/>
+  <xacro:property name="load_hand" value="${'$(arg hand)' == 'true' or '$(arg hand)' == 'True' or '$(arg hand)' == '1'}"/>
+  <xacro:property name="use_franka_hand_path" value="${load_hand}"/>
+  <xacro:property name="mounting_base_link" value="dual_arm_45_base_link"/>
+  <xacro:property name="mounting_base_mesh" value="dual_arm_45_base_link.STL"/>
+  <xacro:property name="mounting_base_origin_rpy" value="0 0 0"/>
+  <xacro:property name="mounting_base_visual_rpy" value="-1.5708000001 -0.0000000001 -3.1415853072"/>
+  <xacro:property name="left_mount_xyz" value="-0.038 -0.18 0.304"/>
+  <xacro:property name="left_mount_rpy" value="-0.5567600306 0.5689773370 -2.4626595739"/>
+  <xacro:property name="right_mount_xyz" value="-0.038 0.18 0.304"/>
+  <xacro:property name="right_mount_rpy" value="0.5567600306 0.5689773370 2.4626595739"/>
+
+  <link name="lychee_root"/>
+
+  <joint name="lychee_root_to_${mounting_base_link}" type="fixed">
+    <parent link="lychee_root"/>
+    <child link="${mounting_base_link}"/>
+    <origin xyz="0 0 0" rpy="${mounting_base_origin_rpy}"/>
+  </joint>
+
+  <link name="${mounting_base_link}">
+    <visual>
+      <origin xyz="0 0 0" rpy="${mounting_base_visual_rpy}"/>
+      <geometry>
+        <mesh filename="package://lychee_fr3_description/meshes/${mounting_base_mesh}"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="${mounting_base_visual_rpy}"/>
+      <geometry>
+        <mesh filename="package://lychee_fr3_description/meshes/${mounting_base_mesh}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="-0.0198650146477697 1.2755017047279E-05 0.222334575056727" rpy="0 0 0"/>
+      <mass value="6.60648599522062"/>
+      <inertia ixx="0.0936597875943432" ixy="1.09875644923452E-05" ixz="0.000154650545694182" iyy="0.0511056842352335" iyz="-1.54662487107246E-05" izz="0.0741382717847405"/>
+    </inertial>
+  </link>
+
+  <joint name="${mounting_base_link}_to_${left_arm_prefix}_base" type="fixed">
+    <origin xyz="${left_mount_xyz}" rpy="${left_mount_rpy}"/>
+    <parent link="${mounting_base_link}"/>
+    <child link="${left_arm_prefix}_base"/>
+  </joint>
+
+  <joint name="${mounting_base_link}_to_${right_arm_prefix}_base" type="fixed">
+    <origin xyz="${right_mount_xyz}" rpy="${right_mount_rpy}"/>
+    <parent link="${mounting_base_link}"/>
+    <child link="${right_arm_prefix}_base"/>
+  </joint>
+
+  <xacro:franka_robot
+    arm_id="${left_robot_type}"
+    joint_limits="${xacro.load_yaml('$(find franka_description)/robots/' + left_robot_type + '/joint_limits.yaml')}"
+    kinematics="${xacro.load_yaml('$(find franka_description)/robots/' + left_robot_type + '/kinematics.yaml')}"
+    inertials="${xacro.load_yaml('$(find franka_description)/robots/' + left_robot_type + '/inertials.yaml')}"
+    dynamics="${xacro.load_yaml('$(find franka_description)/robots/' + left_robot_type + '/dynamics.yaml')}"
+    gazebo="$(arg gazebo)"
+    hand="${use_franka_hand_path}"
+    special_connection="$(arg special_connection)"
+    xyz_ee="$(arg xyz_ee)"
+    rpy_ee="$(arg rpy_ee)"
+    tcp_xyz="$(arg tcp_xyz)"
+    tcp_rpy="$(arg tcp_rpy)"
+    safety_distance="$(arg safety_distance)"
+    with_sc="$(arg with_sc)"
+    no_prefix="$(arg no_prefix)"
+    arm_prefix="${left_prefix}"
+    description_pkg="$(arg description_pkg)"
+    connected_to="${left_arm_prefix}_base"
+    />
+
+  <xacro:franka_robot
+    arm_id="${right_robot_type}"
+    joint_limits="${xacro.load_yaml('$(find franka_description)/robots/' + right_robot_type + '/joint_limits.yaml')}"
+    kinematics="${xacro.load_yaml('$(find franka_description)/robots/' + right_robot_type + '/kinematics.yaml')}"
+    inertials="${xacro.load_yaml('$(find franka_description)/robots/' + right_robot_type + '/inertials.yaml')}"
+    dynamics="${xacro.load_yaml('$(find franka_description)/robots/' + right_robot_type + '/dynamics.yaml')}"
+    gazebo="$(arg gazebo)"
+    hand="${use_franka_hand_path}"
+    special_connection="$(arg special_connection)"
+    xyz_ee="$(arg xyz_ee)"
+    rpy_ee="$(arg rpy_ee)"
+    tcp_xyz="$(arg tcp_xyz)"
+    tcp_rpy="$(arg tcp_rpy)"
+    safety_distance="$(arg safety_distance)"
+    with_sc="$(arg with_sc)"
+    no_prefix="$(arg no_prefix)"
+    arm_prefix="${right_prefix}"
+    description_pkg="$(arg description_pkg)"
+    connected_to="${right_arm_prefix}_base"
+    />
+
+  <xacro:if value="$(arg ros2_control)">
+    <xacro:lychee_franka_arm_ros2_control
+      robot_type="${left_robot_type}"
+      robot_ip="${robot_ips_list[0]}"
+      initial_positions="${selected_home_positions.left}"
+      use_fake_hardware="$(arg use_fake_hardware)"
+      fake_sensor_commands="$(arg fake_sensor_commands)"
+      gazebo="$(arg gazebo)"
+      hand="${use_franka_hand_path}"
+      gazebo_effort="$(arg gazebo_effort)"
+      arm_prefix="${left_prefix}"
+      is_async="$(arg is_async)"
+      thread_priority="$(arg thread_priority)"
+      collision_behavior_lower_torque_thresholds_acceleration="$(arg collision_behavior_lower_torque_thresholds_acceleration)"
+      collision_behavior_upper_torque_thresholds_acceleration="$(arg collision_behavior_upper_torque_thresholds_acceleration)"
+      collision_behavior_lower_torque_thresholds_nominal="$(arg collision_behavior_lower_torque_thresholds_nominal)"
+      collision_behavior_upper_torque_thresholds_nominal="$(arg collision_behavior_upper_torque_thresholds_nominal)"
+      collision_behavior_lower_force_thresholds_acceleration="$(arg collision_behavior_lower_force_thresholds_acceleration)"
+      collision_behavior_upper_force_thresholds_acceleration="$(arg collision_behavior_upper_force_thresholds_acceleration)"
+      collision_behavior_lower_force_thresholds_nominal="$(arg collision_behavior_lower_force_thresholds_nominal)"
+      collision_behavior_upper_force_thresholds_nominal="$(arg collision_behavior_upper_force_thresholds_nominal)"/>
+
+    <xacro:lychee_franka_arm_ros2_control
+      robot_type="${right_robot_type}"
+      robot_ip="${robot_ips_list[1]}"
+      initial_positions="${selected_home_positions.right}"
+      use_fake_hardware="$(arg use_fake_hardware)"
+      fake_sensor_commands="$(arg fake_sensor_commands)"
+      gazebo="$(arg gazebo)"
+      hand="${use_franka_hand_path}"
+      gazebo_effort="$(arg gazebo_effort)"
+      arm_prefix="${right_prefix}"
+      is_async="$(arg is_async)"
+      thread_priority="$(arg thread_priority)"
+      collision_behavior_lower_torque_thresholds_acceleration="$(arg collision_behavior_lower_torque_thresholds_acceleration)"
+      collision_behavior_upper_torque_thresholds_acceleration="$(arg collision_behavior_upper_torque_thresholds_acceleration)"
+      collision_behavior_lower_torque_thresholds_nominal="$(arg collision_behavior_lower_torque_thresholds_nominal)"
+      collision_behavior_upper_torque_thresholds_nominal="$(arg collision_behavior_upper_torque_thresholds_nominal)"
+      collision_behavior_lower_force_thresholds_acceleration="$(arg collision_behavior_lower_force_thresholds_acceleration)"
+      collision_behavior_upper_force_thresholds_acceleration="$(arg collision_behavior_upper_force_thresholds_acceleration)"
+      collision_behavior_lower_force_thresholds_nominal="$(arg collision_behavior_lower_force_thresholds_nominal)"
+      collision_behavior_upper_force_thresholds_nominal="$(arg collision_behavior_upper_force_thresholds_nominal)"/>
+  </xacro:if>
+
+</robot>

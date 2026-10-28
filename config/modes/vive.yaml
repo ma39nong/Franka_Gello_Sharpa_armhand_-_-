@@ -1,0 +1,30 @@
+serials:
+  left: LHR-306ED0EE
+  right: LHR-4A29398A
+
+# Calibrated workcell axes: OpenVR +X -> control +X,
+# OpenVR -Z -> control +Y, and OpenVR +Y -> control +Z.
+# This is the right-handed +90 degree rotation about +X that maps the
+# OpenVR standing frame into the control frame.
+world_to_control_rotation:
+  - [1.0, 0.0, 0.0]
+  - [0.0, 0.0, -1.0]
+  - [0.0, 1.0, 0.0]
+
+# Fixed transform from each physical Tracker origin to the desired hand
+# control point. Identity is safe for initial validation; measure an offset
+# later only if rotation about the Tracker causes unwanted translation.
+tracker_to_control:
+  left:
+    translation_xyz: [0.0, 0.0, 0.0]
+    quaternion_xyzw: [0.0, 0.0, 0.0, 1.0]
+  right:
+    translation_xyz: [0.0, 0.0, 0.0]
+    quaternion_xyzw: [0.0, 0.0, 0.0, 1.0]
+
+ready_timeout: 5.0
+frozen_timeout: 1.0
+max_position_jump: 0.20
+max_rotation_jump: 1.0
+max_linear_speed: 3.0
+max_angular_speed: 12.0

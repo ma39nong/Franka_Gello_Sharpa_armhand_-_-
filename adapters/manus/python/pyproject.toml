@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "manus-teleop"
+version = "0.1.0"
+description = "MANUS glove hand source for the unified teleoperation operator"
+requires-python = ">=3.10,<3.14"
+# pico-bimanual-franka-teleop is a local editable install, not on PyPI;
+# ops/setup/setup_teleop_env.sh installs it first.
+dependencies = [
+    "casadi",
+    "numpy>=2.0,<2.4",
+    "pico-bimanual-franka-teleop",
+]
+
+[tool.setuptools]
+packages = ["manus_teleop"]

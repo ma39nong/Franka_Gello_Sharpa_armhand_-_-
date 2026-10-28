@@ -1,0 +1,12 @@
+epoch	elapsed	franka	teleop	moveit	preset	gello	error_lines	udp_rcvbuf	udp_inerr	left_drop	right_drop
+1786948093	16	running	running	running	running	running	0	508	508	0	0
+1786948123	46	running	running	running	running	running	0	508	508	0	0
+1786948154	77	running	running	running	running	running	0	508	508	0	0
+1786948184	107	running	running	running	running	running	0	508	508	0	0
+1786948214	137	running	running	running	running	running	0	508	508	0	0
+1786948245	168	running	running	running	running	running	0	508	508	0	0
+1786948275	198	running	running	running	running	running	0	508	508	0	0
+1786948306	229	running	running	running	running	running	0	508	508	0	0
+1786948336	259	running	running	running	running	running	0	508	508	0	0
+1786948367	290	running	running	running	running	running	0	508	508	0	0
+1786948397	320	running	running	running	running	running	0	508	508	0	0

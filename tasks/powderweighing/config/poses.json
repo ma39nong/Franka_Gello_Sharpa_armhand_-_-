@@ -1,0 +1,46 @@
+{
+  "format": "powderweighing-o30i-hardcoded-poses",
+  "version": 1,
+  "side": "right",
+  "joint_names": [
+    "thumb_cmc_roll",
+    "thumb_cmc_yaw",
+    "thumb_mcp",
+    "thumb_ip",
+    "index_mcp_roll",
+    "index_mcp_pitch",
+    "index_pip",
+    "index_dip",
+    "middle_mcp_roll",
+    "middle_mcp_pitch",
+    "middle_pip",
+    "middle_dip",
+    "ring_mcp_roll",
+    "ring_mcp_pitch",
+    "ring_pip",
+    "ring_dip",
+    "pinky_mcp_roll",
+    "pinky_mcp_pitch",
+    "pinky_pip",
+    "pinky_dip"
+  ],
+  "trigger": {
+    "ready_enter_m": 0.045,
+    "ready_exit_m": 0.055,
+    "pitch_enter_m": 0.018,
+    "pitch_exit_m": 0.030,
+    "dwell_seconds": 0.15,
+    "selection_margin_m": 0.005
+  },
+  "max_joint_speed_rad_s": 3.0,
+  "poses_ticks": {
+    "pitch_ready": [
+      93, 184, 71, 108, 92, 140, 171, 63, 219, 255,
+      230, 182, 150, 248, 247, 101, 77, 249, 201, 0
+    ],
+    "pitch": [
+      93, 180, 128, 108, 197, 174, 136, 138, 219, 255,
+      230, 182, 150, 248, 247, 139, 77, 249, 244, 0
+    ]
+  }
+}

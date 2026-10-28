@@ -1,0 +1,25 @@
+# Portable host-side Python environment for a new operator computer.
+#
+# This file intentionally contains only packages obtainable from Conda.
+# Repository-local packages, the external GELLO driver, the MANUS native
+# bridge, Docker, and hardware permissions are installed separately; see
+# docs/NEW_COMPUTER_SETUP.md.
+name: gello-upper-body-teleop
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - setuptools
+  - wheel
+  - pybind11
+  - pyyaml
+  - scipy
+  - pytest
+  - nlopt
+  - pinocchio>=3.8
+  - pip:
+      - wuji-sdk>=0.10.0
+      - wujihandpy>=1.8.0

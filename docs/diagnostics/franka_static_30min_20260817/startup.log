@@ -1,0 +1,221 @@
+[INFO] [launch]: All log files can be found below /root/.ros/log/2026-08-17-05-47-36-653184-user-Default-string-1
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [robot_state_publisher-1]: process started with pid [31]
+[INFO] [taskset-2]: process started with pid [33]
+[INFO] [spawner-3]: process started with pid [35]
+[INFO] [spawner-4]: process started with pid [37]
+[INFO] [robot_state_publisher-5]: process started with pid [39]
+[INFO] [taskset-6]: process started with pid [41]
+[INFO] [spawner-7]: process started with pid [43]
+[INFO] [spawner-8]: process started with pid [45]
+[INFO] [set_bi_collision_behavior.py-9]: process started with pid [58]
+[INFO] [reset_to_initial_pose.py-10]: process started with pid [62]
+[taskset-6] 1786945656.932993 [0] franka_ros: selected interface "lo" is not multicast-capable: disabling multicast
+[taskset-6] [WARN] [1786945656.949534420] [right.controller_manager]: [Deprecated] Passing the robot description parameter directly to the control_manager node is deprecated. Use '~/robot_description' topic from 'robot_state_publisher' instead.
+[taskset-6] [INFO] [1786945656.949733229] [resource_manager]: Loading hardware 'right__FrankaHardwareInterface' 
+[taskset-6] [INFO] [1786945656.966569943] [resource_manager]: Initialize hardware 'right__FrankaHardwareInterface' 
+[taskset-6] [INFO] [1786945656.966621406] [FrankaHardwareInterface]: Parsed Franka ros2_control interface version: 0.1.0
+[taskset-6] [INFO] [1786945656.966624827] [FrankaHardwareInterface]: Connecting to robot at "172.16.1.2" ...
+[taskset-6] [INFO] [1786945656.968177129] [FrankaHardwareInterface]: libfranka: Setting thread priority to the highest possible value.
+[taskset-2] 1786945656.970123 [0] franka_ros: selected interface "lo" is not multicast-capable: disabling multicast
+[taskset-6] [INFO] [1786945656.978714404] [FrankaHardwareInterface]: Successfully connected to robot
+[robot_state_publisher-1] 1786945656.980073 [0] robot_stat: selected interface "lo" is not multicast-capable: disabling multicast
+[robot_state_publisher-5] 1786945656.982803 [0] robot_stat: selected interface "lo" is not multicast-capable: disabling multicast
+[taskset-6] [INFO] [1786945656.983729460] [right.service_server]: Service started
+[taskset-2] [WARN] [1786945657.004931286] [left.controller_manager]: [Deprecated] Passing the robot description parameter directly to the control_manager node is deprecated. Use '~/robot_description' topic from 'robot_state_publisher' instead.
+[taskset-2] [INFO] [1786945657.005123467] [resource_manager]: Loading hardware 'left__FrankaHardwareInterface' 
+[taskset-2] [INFO] [1786945657.007197699] [resource_manager]: Initialize hardware 'left__FrankaHardwareInterface' 
+[taskset-2] [INFO] [1786945657.007239450] [FrankaHardwareInterface]: Parsed Franka ros2_control interface version: 0.1.0
+[taskset-2] [INFO] [1786945657.007242872] [FrankaHardwareInterface]: Connecting to robot at "172.16.0.2" ...
+[taskset-2] [INFO] [1786945657.018252818] [FrankaHardwareInterface]: libfranka: Setting thread priority to the highest possible value.
+[robot_state_publisher-1] [INFO] [1786945657.034384661] [left.robot_state_publisher]: got segment base
+[robot_state_publisher-1] [INFO] [1786945657.034459140] [left.robot_state_publisher]: got segment left_fr3_link0
+[robot_state_publisher-1] [INFO] [1786945657.034464981] [left.robot_state_publisher]: got segment left_fr3_link1
+[robot_state_publisher-1] [INFO] [1786945657.034468099] [left.robot_state_publisher]: got segment left_fr3_link2
+[robot_state_publisher-1] [INFO] [1786945657.034470700] [left.robot_state_publisher]: got segment left_fr3_link3
+[robot_state_publisher-1] [INFO] [1786945657.034473357] [left.robot_state_publisher]: got segment left_fr3_link4
+[robot_state_publisher-1] [INFO] [1786945657.034476153] [left.robot_state_publisher]: got segment left_fr3_link5
+[robot_state_publisher-1] [INFO] [1786945657.034478654] [left.robot_state_publisher]: got segment left_fr3_link6
+[robot_state_publisher-1] [INFO] [1786945657.034481385] [left.robot_state_publisher]: got segment left_fr3_link7
+[robot_state_publisher-1] [INFO] [1786945657.034483920] [left.robot_state_publisher]: got segment left_fr3_link8
+[robot_state_publisher-5] [INFO] [1786945657.039948976] [right.robot_state_publisher]: got segment base
+[robot_state_publisher-5] [INFO] [1786945657.040006268] [right.robot_state_publisher]: got segment right_fr3_link0
+[robot_state_publisher-5] [INFO] [1786945657.040011401] [right.robot_state_publisher]: got segment right_fr3_link1
+[robot_state_publisher-5] [INFO] [1786945657.040014332] [right.robot_state_publisher]: got segment right_fr3_link2
+[robot_state_publisher-5] [INFO] [1786945657.040016947] [right.robot_state_publisher]: got segment right_fr3_link3
+[robot_state_publisher-5] [INFO] [1786945657.040019507] [right.robot_state_publisher]: got segment right_fr3_link4
+[robot_state_publisher-5] [INFO] [1786945657.040022032] [right.robot_state_publisher]: got segment right_fr3_link5
+[robot_state_publisher-5] [INFO] [1786945657.040024636] [right.robot_state_publisher]: got segment right_fr3_link6
+[robot_state_publisher-5] [INFO] [1786945657.040027362] [right.robot_state_publisher]: got segment right_fr3_link7
+[robot_state_publisher-5] [INFO] [1786945657.040029970] [right.robot_state_publisher]: got segment right_fr3_link8
+[taskset-2] [INFO] [1786945657.072090895] [FrankaHardwareInterface]: Successfully connected to robot
+[taskset-2] [INFO] [1786945657.082500708] [left.service_server]: Service started
+[taskset-6] [INFO] [1786945657.086082349] [right.action_server]: Action server started
+[taskset-6] [INFO] [1786945657.086178326] [resource_manager]: Successful initialization of hardware 'right__FrankaHardwareInterface'
+[taskset-6] [INFO] [1786945657.086210233] [FrankaHardwareInterface]: Register joint-based command interfaces
+[taskset-6] [INFO] [1786945657.086212759] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint1 for command interface position with index 0
+[taskset-6] [INFO] [1786945657.086215279] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint1 for command interface velocity with index 0
+[taskset-6] [INFO] [1786945657.086216915] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint1 for command interface effort with index 0
+[taskset-6] [INFO] [1786945657.086218618] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint2 for command interface position with index 1
+[taskset-6] [INFO] [1786945657.086220332] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint2 for command interface velocity with index 1
+[taskset-6] [INFO] [1786945657.086221845] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint2 for command interface effort with index 1
+[taskset-6] [INFO] [1786945657.086223511] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint3 for command interface position with index 2
+[taskset-6] [INFO] [1786945657.086226603] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint3 for command interface velocity with index 2
+[taskset-6] [INFO] [1786945657.086228202] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint3 for command interface effort with index 2
+[taskset-6] [INFO] [1786945657.086230236] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint4 for command interface position with index 3
+[taskset-6] [INFO] [1786945657.086231746] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint4 for command interface velocity with index 3
+[taskset-6] [INFO] [1786945657.086233215] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint4 for command interface effort with index 3
+[taskset-6] [INFO] [1786945657.086234773] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint5 for command interface position with index 4
+[taskset-6] [INFO] [1786945657.086236260] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint5 for command interface velocity with index 4
+[taskset-6] [INFO] [1786945657.086238170] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint5 for command interface effort with index 4
+[taskset-6] [INFO] [1786945657.086239723] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint6 for command interface position with index 5
+[taskset-6] [INFO] [1786945657.086241204] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint6 for command interface velocity with index 5
+[taskset-6] [INFO] [1786945657.086242718] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint6 for command interface effort with index 5
+[taskset-6] [INFO] [1786945657.086244280] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint7 for command interface position with index 6
+[taskset-6] [INFO] [1786945657.086245810] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint7 for command interface velocity with index 6
+[taskset-6] [INFO] [1786945657.086263332] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint7 for command interface effort with index 6
+[taskset-6] [INFO] [1786945657.086265063] [FrankaHardwareInterface]: Register general purpose command interfaces
+[taskset-6] [INFO] [1786945657.086268074] [FrankaHardwareInterface]: Registering command interface: vx for command interface cartesian_velocity with index 0
+[taskset-6] [INFO] [1786945657.086270714] [FrankaHardwareInterface]: Registering command interface: vy for command interface cartesian_velocity with index 1
+[taskset-6] [INFO] [1786945657.086272771] [FrankaHardwareInterface]: Registering command interface: vz for command interface cartesian_velocity with index 2
+[taskset-6] [INFO] [1786945657.086274268] [FrankaHardwareInterface]: Registering command interface: wx for command interface cartesian_velocity with index 3
+[taskset-6] [INFO] [1786945657.086275756] [FrankaHardwareInterface]: Registering command interface: wy for command interface cartesian_velocity with index 4
+[taskset-6] [INFO] [1786945657.086277875] [FrankaHardwareInterface]: Registering command interface: wz for command interface cartesian_velocity with index 5
+[taskset-6] [INFO] [1786945657.086279473] [FrankaHardwareInterface]: Registering command interface: 0 for command interface cartesian_pose_command with index 0
+[taskset-6] [INFO] [1786945657.086282845] [FrankaHardwareInterface]: Registering command interface: 1 for command interface cartesian_pose_command with index 1
+[taskset-6] [INFO] [1786945657.086284636] [FrankaHardwareInterface]: Registering command interface: 2 for command interface cartesian_pose_command with index 2
+[taskset-6] [INFO] [1786945657.086286353] [FrankaHardwareInterface]: Registering command interface: 3 for command interface cartesian_pose_command with index 3
+[taskset-6] [INFO] [1786945657.086287988] [FrankaHardwareInterface]: Registering command interface: 4 for command interface cartesian_pose_command with index 4
+[taskset-6] [INFO] [1786945657.086289484] [FrankaHardwareInterface]: Registering command interface: 5 for command interface cartesian_pose_command with index 5
+[taskset-6] [INFO] [1786945657.086290987] [FrankaHardwareInterface]: Registering command interface: 6 for command interface cartesian_pose_command with index 6
+[taskset-6] [INFO] [1786945657.086292451] [FrankaHardwareInterface]: Registering command interface: 7 for command interface cartesian_pose_command with index 7
+[taskset-6] [INFO] [1786945657.086293919] [FrankaHardwareInterface]: Registering command interface: 8 for command interface cartesian_pose_command with index 8
+[taskset-6] [INFO] [1786945657.086295382] [FrankaHardwareInterface]: Registering command interface: 9 for command interface cartesian_pose_command with index 9
+[taskset-6] [INFO] [1786945657.086296928] [FrankaHardwareInterface]: Registering command interface: 10 for command interface cartesian_pose_command with index 10
+[taskset-6] [INFO] [1786945657.086298624] [FrankaHardwareInterface]: Registering command interface: 11 for command interface cartesian_pose_command with index 11
+[taskset-6] [INFO] [1786945657.086300258] [FrankaHardwareInterface]: Registering command interface: 12 for command interface cartesian_pose_command with index 12
+[taskset-6] [INFO] [1786945657.086301812] [FrankaHardwareInterface]: Registering command interface: 13 for command interface cartesian_pose_command with index 13
+[taskset-6] [INFO] [1786945657.086303419] [FrankaHardwareInterface]: Registering command interface: 14 for command interface cartesian_pose_command with index 14
+[taskset-6] [INFO] [1786945657.086304932] [FrankaHardwareInterface]: Registering command interface: 15 for command interface cartesian_pose_command with index 15
+[taskset-6] [INFO] [1786945657.086306752] [FrankaHardwareInterface]: Registering command interface: joint_3_position for command interface elbow_command with index 0
+[taskset-6] [INFO] [1786945657.086308554] [FrankaHardwareInterface]: Registering command interface: joint_4_sign for command interface elbow_command with index 1
+[taskset-6] [INFO] [1786945657.086362076] [resource_manager]: 'configure' hardware 'right__FrankaHardwareInterface' 
+[taskset-6] [INFO] [1786945657.086366622] [resource_manager]: Successful 'configure' of hardware 'right__FrankaHardwareInterface'
+[taskset-6] [INFO] [1786945657.086380676] [resource_manager]: 'activate' hardware 'right__FrankaHardwareInterface' 
+[taskset-6] [INFO] [1786945657.086493830] [FrankaHardwareInterface]: Started
+[taskset-6] [INFO] [1786945657.086497611] [resource_manager]: Successful 'activate' of hardware 'right__FrankaHardwareInterface'
+[taskset-6] [INFO] [1786945657.142851715] [right.controller_manager]: update rate is 1001 Hz
+[taskset-6] [INFO] [1786945657.142890851] [right.controller_manager]: Spawning controller_manager RT thread with scheduler priority: 98
+[taskset-6] [INFO] [1786945657.144447583] [right.controller_manager]: Successful set up FIFO RT scheduling policy with priority 98.
+[taskset-2] [INFO] [1786945657.184140690] [left.action_server]: Action server started
+[taskset-2] [INFO] [1786945657.184172336] [resource_manager]: Successful initialization of hardware 'left__FrankaHardwareInterface'
+[taskset-2] [INFO] [1786945657.184200132] [FrankaHardwareInterface]: Register joint-based command interfaces
+[taskset-2] [INFO] [1786945657.184202979] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint1 for command interface position with index 0
+[taskset-2] [INFO] [1786945657.184205262] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint1 for command interface velocity with index 0
+[taskset-2] [INFO] [1786945657.184206855] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint1 for command interface effort with index 0
+[taskset-2] [INFO] [1786945657.184208479] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint2 for command interface position with index 1
+[taskset-2] [INFO] [1786945657.184209990] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint2 for command interface velocity with index 1
+[taskset-2] [INFO] [1786945657.184211439] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint2 for command interface effort with index 1
+[taskset-2] [INFO] [1786945657.184213025] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint3 for command interface position with index 2
+[taskset-2] [INFO] [1786945657.184215742] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint3 for command interface velocity with index 2
+[taskset-2] [INFO] [1786945657.184217239] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint3 for command interface effort with index 2
+[taskset-2] [INFO] [1786945657.184218745] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint4 for command interface position with index 3
+[taskset-2] [INFO] [1786945657.184220240] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint4 for command interface velocity with index 3
+[taskset-2] [INFO] [1786945657.184221851] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint4 for command interface effort with index 3
+[taskset-2] [INFO] [1786945657.184223453] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint5 for command interface position with index 4
+[taskset-2] [INFO] [1786945657.184224908] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint5 for command interface velocity with index 4
+[taskset-2] [INFO] [1786945657.184226514] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint5 for command interface effort with index 4
+[taskset-2] [INFO] [1786945657.184227986] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint6 for command interface position with index 5
+[taskset-2] [INFO] [1786945657.184229459] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint6 for command interface velocity with index 5
+[taskset-2] [INFO] [1786945657.184230957] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint6 for command interface effort with index 5
+[taskset-2] [INFO] [1786945657.184232480] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint7 for command interface position with index 6
+[taskset-2] [INFO] [1786945657.184233923] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint7 for command interface velocity with index 6
+[taskset-2] [INFO] [1786945657.184254745] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint7 for command interface effort with index 6
+[taskset-2] [INFO] [1786945657.184256359] [FrankaHardwareInterface]: Register general purpose command interfaces
+[taskset-2] [INFO] [1786945657.184259954] [FrankaHardwareInterface]: Registering command interface: vx for command interface cartesian_velocity with index 0
+[taskset-2] [INFO] [1786945657.184262002] [FrankaHardwareInterface]: Registering command interface: vy for command interface cartesian_velocity with index 1
+[taskset-2] [INFO] [1786945657.184263635] [FrankaHardwareInterface]: Registering command interface: vz for command interface cartesian_velocity with index 2
+[taskset-2] [INFO] [1786945657.184266064] [FrankaHardwareInterface]: Registering command interface: wx for command interface cartesian_velocity with index 3
+[taskset-2] [INFO] [1786945657.184267837] [FrankaHardwareInterface]: Registering command interface: wy for command interface cartesian_velocity with index 4
+[taskset-2] [INFO] [1786945657.184270036] [FrankaHardwareInterface]: Registering command interface: wz for command interface cartesian_velocity with index 5
+[taskset-2] [INFO] [1786945657.184271615] [FrankaHardwareInterface]: Registering command interface: 0 for command interface cartesian_pose_command with index 0
+[taskset-2] [INFO] [1786945657.184275467] [FrankaHardwareInterface]: Registering command interface: 1 for command interface cartesian_pose_command with index 1
+[taskset-2] [INFO] [1786945657.184277077] [FrankaHardwareInterface]: Registering command interface: 2 for command interface cartesian_pose_command with index 2
+[taskset-2] [INFO] [1786945657.184278986] [FrankaHardwareInterface]: Registering command interface: 3 for command interface cartesian_pose_command with index 3
+[taskset-2] [INFO] [1786945657.184280507] [FrankaHardwareInterface]: Registering command interface: 4 for command interface cartesian_pose_command with index 4
+[taskset-2] [INFO] [1786945657.184282038] [FrankaHardwareInterface]: Registering command interface: 5 for command interface cartesian_pose_command with index 5
+[taskset-2] [INFO] [1786945657.184283445] [FrankaHardwareInterface]: Registering command interface: 6 for command interface cartesian_pose_command with index 6
+[taskset-2] [INFO] [1786945657.184284889] [FrankaHardwareInterface]: Registering command interface: 7 for command interface cartesian_pose_command with index 7
+[taskset-2] [INFO] [1786945657.184286465] [FrankaHardwareInterface]: Registering command interface: 8 for command interface cartesian_pose_command with index 8
+[taskset-2] [INFO] [1786945657.184287906] [FrankaHardwareInterface]: Registering command interface: 9 for command interface cartesian_pose_command with index 9
+[taskset-2] [INFO] [1786945657.184289355] [FrankaHardwareInterface]: Registering command interface: 10 for command interface cartesian_pose_command with index 10
+[taskset-2] [INFO] [1786945657.184291001] [FrankaHardwareInterface]: Registering command interface: 11 for command interface cartesian_pose_command with index 11
+[taskset-2] [INFO] [1786945657.184292504] [FrankaHardwareInterface]: Registering command interface: 12 for command interface cartesian_pose_command with index 12
+[taskset-2] [INFO] [1786945657.184294004] [FrankaHardwareInterface]: Registering command interface: 13 for command interface cartesian_pose_command with index 13
+[taskset-2] [INFO] [1786945657.184295921] [FrankaHardwareInterface]: Registering command interface: 14 for command interface cartesian_pose_command with index 14
+[taskset-2] [INFO] [1786945657.184297562] [FrankaHardwareInterface]: Registering command interface: 15 for command interface cartesian_pose_command with index 15
+[taskset-2] [INFO] [1786945657.184299401] [FrankaHardwareInterface]: Registering command interface: joint_3_position for command interface elbow_command with index 0
+[taskset-2] [INFO] [1786945657.184301250] [FrankaHardwareInterface]: Registering command interface: joint_4_sign for command interface elbow_command with index 1
+[taskset-2] [INFO] [1786945657.184347092] [resource_manager]: 'configure' hardware 'left__FrankaHardwareInterface' 
+[taskset-2] [INFO] [1786945657.184351281] [resource_manager]: Successful 'configure' of hardware 'left__FrankaHardwareInterface'
+[taskset-2] [INFO] [1786945657.184361385] [resource_manager]: 'activate' hardware 'left__FrankaHardwareInterface' 
+[taskset-2] [INFO] [1786945657.184474490] [FrankaHardwareInterface]: Started
+[taskset-2] [INFO] [1786945657.184477926] [resource_manager]: Successful 'activate' of hardware 'left__FrankaHardwareInterface'
+[taskset-2] [INFO] [1786945657.390037662] [left.controller_manager]: update rate is 1001 Hz
+[taskset-2] [INFO] [1786945657.390083596] [left.controller_manager]: Spawning controller_manager RT thread with scheduler priority: 98
+[taskset-2] [INFO] [1786945657.404050546] [left.controller_manager]: Successful set up FIFO RT scheduling policy with priority 98.
+[set_bi_collision_behavior.py-9] 1786945657.629787 [0]    python3: selected interface "lo" is not multicast-capable: disabling multicast
+[spawner-4] 1786945657.652985 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+[spawner-3] 1786945657.668979 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+[spawner-7] 1786945657.673263 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+[spawner-8] 1786945657.676503 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+[reset_to_initial_pose.py-10] 1786945657.687062 [0]    python3: selected interface "lo" is not multicast-capable: disabling multicast
+[taskset-6] [INFO] [1786945657.797330284] [right.controller_manager]: Loading controller 'joint_state_broadcaster'
+[taskset-6] [INFO] [1786945657.805247000] [right.controller_manager]: Loading controller 'franka_robot_state_broadcaster'
+[taskset-2] [INFO] [1786945657.813070890] [left.controller_manager]: Loading controller 'franka_robot_state_broadcaster'
+[set_bi_collision_behavior.py-9] [INFO] [1786945657.839739720] [collision_behavior_setter]: Setting left collision thresholds: torque [40.0, 40.0, 36.0, 36.0, 32.0, 28.0, 24.0]/[60.0, 60.0, 50.0, 50.0, 45.0, 40.0, 35.0] Nm, force [30.0, 30.0, 30.0, 30.0, 30.0, 30.0]/[50.0, 50.0, 50.0, 50.0, 50.0, 50.0] N (acceleration = nominal).
+[set_bi_collision_behavior.py-9] [INFO] [1786945657.853191917] [collision_behavior_setter]: left arm accepted the collision thresholds.
+[set_bi_collision_behavior.py-9] [INFO] [1786945657.853486996] [collision_behavior_setter]: Setting right collision thresholds: torque [40.0, 40.0, 36.0, 36.0, 32.0, 28.0, 24.0]/[60.0, 60.0, 50.0, 50.0, 45.0, 40.0, 35.0] Nm, force [30.0, 30.0, 30.0, 30.0, 30.0, 30.0]/[50.0, 50.0, 50.0, 50.0, 50.0, 50.0] N (acceleration = nominal).
+[spawner-7] [INFO] [1786945657.855281283] [right.spawner_joint_state_broadcaster]: [94mLoaded [1mjoint_state_broadcaster[0m
+[spawner-4] [INFO] [1786945657.861143524] [left.spawner_franka_robot_state_broadcaster]: [94mLoaded [1mfranka_robot_state_broadcaster[0m
+[taskset-6] [INFO] [1786945657.861213389] [right.controller_manager]: Configuring controller 'joint_state_broadcaster'
+[taskset-6] [INFO] [1786945657.861260493] [right.joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[spawner-8] [INFO] [1786945657.861946197] [right.spawner_franka_robot_state_broadcaster]: [94mLoaded [1mfranka_robot_state_broadcaster[0m
+[set_bi_collision_behavior.py-9] [INFO] [1786945657.864867079] [collision_behavior_setter]: right arm accepted the collision thresholds.
+[taskset-6] [WARN] [1786945657.866786886] [right.controller_manager]: The controller : joint_state_broadcaster update rate : 200 Hz is not a perfect divisor of the controller manager's update rate : 1001 Hz!. The controller will be updated with nearest divisor's update rate which is : 200 Hz.
+[taskset-6] [INFO] [1786945657.875644100] [right.controller_manager]: Configuring controller 'franka_robot_state_broadcaster'
+[taskset-2] [INFO] [1786945657.876871791] [left.controller_manager]: Configuring controller 'franka_robot_state_broadcaster'
+[taskset-6] [WARN] [1786945657.879525921] [right.controller_manager]: The controller : franka_robot_state_broadcaster update rate : 100 Hz is not a perfect divisor of the controller manager's update rate : 1001 Hz!. The controller will be updated with nearest divisor's update rate which is : 100 Hz.
+[spawner-7] [INFO] [1786945657.882873618] [right.spawner_joint_state_broadcaster]: [92mConfigured and activated [1mjoint_state_broadcaster[0m
+[taskset-2] [WARN] [1786945657.888563657] [left.controller_manager]: The controller : franka_robot_state_broadcaster update rate : 100 Hz is not a perfect divisor of the controller manager's update rate : 1001 Hz!. The controller will be updated with nearest divisor's update rate which is : 100 Hz.
+[spawner-8] [INFO] [1786945657.891406511] [right.spawner_franka_robot_state_broadcaster]: [92mConfigured and activated [1mfranka_robot_state_broadcaster[0m
+[spawner-4] [INFO] [1786945657.899458784] [left.spawner_franka_robot_state_broadcaster]: [92mConfigured and activated [1mfranka_robot_state_broadcaster[0m
+[taskset-2] [INFO] [1786945657.907642404] [left.controller_manager]: Loading controller 'joint_state_broadcaster'
+[spawner-3] [INFO] [1786945657.928644292] [left.spawner_joint_state_broadcaster]: [94mLoaded [1mjoint_state_broadcaster[0m
+[taskset-2] [INFO] [1786945657.930527096] [left.controller_manager]: Configuring controller 'joint_state_broadcaster'
+[taskset-2] [INFO] [1786945657.930555854] [left.joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[taskset-2] [WARN] [1786945657.935224618] [left.controller_manager]: The controller : joint_state_broadcaster update rate : 200 Hz is not a perfect divisor of the controller manager's update rate : 1001 Hz!. The controller will be updated with nearest divisor's update rate which is : 200 Hz.
+[INFO] [set_bi_collision_behavior.py-9]: process has finished cleanly [pid 58]
+[INFO] [launch.user]: Collision threshold configuration completed; starting left joint-impedance controller.
+[INFO] [spawner-4]: process has finished cleanly [pid 37]
+[INFO] [spawner-11]: process started with pid [246]
+[INFO] [spawner-7]: process has finished cleanly [pid 43]
+[spawner-3] [INFO] [1786945658.155715422] [left.spawner_joint_state_broadcaster]: [92mConfigured and activated [1mjoint_state_broadcaster[0m
+[INFO] [spawner-8]: process has finished cleanly [pid 45]
+[spawner-11] 1786945658.258618 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+[INFO] [spawner-3]: process has finished cleanly [pid 35]
+[taskset-2] [INFO] [1786945658.409938080] [left.controller_manager]: Loading controller 'joint_impedance_controller'
+[spawner-11] [INFO] [1786945658.428476452] [left.spawner_joint_impedance_controller]: [94mLoaded [1mjoint_impedance_controller[0m
+[taskset-2] [INFO] [1786945658.530633242] [left.controller_manager]: Configuring controller 'joint_impedance_controller'
+[spawner-11] [INFO] [1786945658.642177198] [left.spawner_joint_impedance_controller]: [92mConfigured and activated [1mjoint_impedance_controller[0m
+[INFO] [spawner-11]: process has finished cleanly [pid 246]
+[INFO] [launch.user]: Left joint-impedance controller activation completed; starting right joint-impedance controller.
+[INFO] [spawner-12]: process started with pid [258]
+[spawner-12] 1786945658.984488 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+[taskset-6] [INFO] [1786945659.011666522] [right.controller_manager]: Loading controller 'joint_impedance_controller'
+[spawner-12] [INFO] [1786945659.026369759] [right.spawner_joint_impedance_controller]: [94mLoaded [1mjoint_impedance_controller[0m
+[taskset-6] [INFO] [1786945659.027408278] [right.controller_manager]: Configuring controller 'joint_impedance_controller'
+[spawner-12] [INFO] [1786945659.037381682] [right.spawner_joint_impedance_controller]: [92mConfigured and activated [1mjoint_impedance_controller[0m
+[INFO] [spawner-12]: process has finished cleanly [pid 258]
+[INFO] [launch.user]: Right joint-impedance controller activation completed.
+[taskset-2] [INFO] [1786945659.535651808] [left.joint_impedance_controller]: Holding current position while waiting for valid joint commands.

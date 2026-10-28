@@ -1,0 +1,403 @@
+moveit-ik-1  | [INFO] [launch]: All log files can be found below /root/.ros/log/2026-08-17-06-25-16-316940-user-Default-string-1
+moveit-ik-1  | [INFO] [launch]: Default logging verbosity is set to INFO
+moveit-ik-1  | [INFO] [move_group-1]: process started with pid [31]
+moveit-ik-1  | [INFO] [joint_state_publisher-2]: process started with pid [33]
+moveit-ik-1  | [INFO] [robot_state_publisher-3]: process started with pid [35]
+moveit-ik-1  | [robot_state_publisher-3] 1786947916.625606 [0] robot_stat: selected interface "lo" is not multicast-capable: disabling multicast
+moveit-ik-1  | [robot_state_publisher-3] [INFO] [1786947916.631071294] [moveit_ik_robot_state_publisher]: got segment dual_arm_45_base_link
+moveit-ik-1  | [robot_state_publisher-3] [INFO] [1786947916.631129643] [moveit_ik_robot_state_publisher]: got segment left_base
+moveit-ik-1  | [robot_state_publisher-3] [INFO] [1786947916.631134719] [moveit_ik_robot_state_publisher]: got segment left_fr3_link0
+moveit-ik-1  | [robot_state_publisher-3] [INFO] [1786947916.631137739] [moveit_ik_robot_state_publisher]: got segment left_fr3_link1
+teleop-control-1  | [INFO] [launch]: All log files can be found below /root/.ros/log/2026-08-17-06-25-16-311798-user-Default-string-1
+gello-bridge-1    | [INFO] [launch]: All log files can be found below /root/.ros/log/2026-08-17-06-25-16-366327-user-Default-string-1
+gello-bridge-1    | [INFO] [launch]: Default logging verbosity is set to INFO
+gello-bridge-1    | [INFO] [bridge-1]: process started with pid [31]
+teleop-control-1  | [INFO] [launch]: Default logging verbosity is set to INFO
+gello-bridge-1    | [bridge-1] 1786947916.532808 [0]     bridge: selected interface "lo" is not multicast-capable: disabling multicast
+gello-bridge-1    | [bridge-1] [INFO] [1786947916.580246948] [pico_teleop_bridge]: gello adapter listening on udp://127.0.0.1:5560.
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631140415] [moveit_ik_robot_state_publisher]: got segment left_fr3_link2
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631142968] [moveit_ik_robot_state_publisher]: got segment left_fr3_link3
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631145434] [moveit_ik_robot_state_publisher]: got segment left_fr3_link4
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631147973] [moveit_ik_robot_state_publisher]: got segment left_fr3_link5
+preset-ik-1  | preset IK server starting on 127.0.0.1:5591; waiting for MoveIt
+preset-ik-1       | 1786947916.726380 [0]    python3: selected interface "lo" is not multicast-capable: disabling multicast
+preset-ik-1       | preset IK server listening on 127.0.0.1:5591
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631150535] [moveit_ik_robot_state_publisher]: got segment left_fr3_link6
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631153056] [moveit_ik_robot_state_publisher]: got segment left_fr3_link7
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631155575] [moveit_ik_robot_state_publisher]: got segment left_fr3_link8
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631158214] [moveit_ik_robot_state_publisher]: got segment lychee_root
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631160783] [moveit_ik_robot_state_publisher]: got segment right_base
+preset-ik-1       | preset IK server MoveIt warmup complete
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631163316] [moveit_ik_robot_state_publisher]: got segment right_fr3_link0
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631165860] [moveit_ik_robot_state_publisher]: got segment right_fr3_link1
+teleop-control-1  | [INFO] [safety_gateway-1]: process started with pid [31]
+teleop-control-1  | [INFO] [joint_splitter-2]: process started with pid [33]
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631168398] [moveit_ik_robot_state_publisher]: got segment right_fr3_link2
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631170877] [moveit_ik_robot_state_publisher]: got segment right_fr3_link3
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631173283] [moveit_ik_robot_state_publisher]: got segment right_fr3_link4
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631175834] [moveit_ik_robot_state_publisher]: got segment right_fr3_link5
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631178260] [moveit_ik_robot_state_publisher]: got segment right_fr3_link6
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631180746] [moveit_ik_robot_state_publisher]: got segment right_fr3_link7
+moveit-ik-1       | [robot_state_publisher-3] [INFO] [1786947916.631183217] [moveit_ik_robot_state_publisher]: got segment right_fr3_link8
+moveit-ik-1       | [move_group-1] 1786947916.668361 [0] move_group: selected interface "lo" is not multicast-capable: disabling multicast
+moveit-ik-1       | [move_group-1] [WARN] [1786947916.750202197] [moveit.ros.occupancy_map_monitor.middleware_handle]: Resolution not specified for Octomap. Assuming resolution = 0.1 instead
+moveit-ik-1       | [move_group-1] [ERROR] [1786947916.750262842] [moveit.ros.occupancy_map_monitor.middleware_handle]: No 3D sensor plugin(s) defined for octomap updates
+moveit-ik-1       | [joint_state_publisher-2] 1786947916.795042 [0] joint_stat: selected interface "lo" is not multicast-capable: disabling multicast
+moveit-ik-1       | [joint_state_publisher-2] [INFO] [1786947916.826609743] [moveit_ik_joint_state_publisher]: Waiting for robot_description to be published on the robot_description topic...
+moveit-ik-1       | [move_group-1] [WARN] [1786947916.895393657] [moveit_ros.planning_scene_monitor.planning_scene_monitor]: Unable to transform object from frame 'base' to planning frame'lychee_root' (Could not find a connection between 'lychee_root' and 'base' because they are not part of the same tree.Tf has two or more unconnected trees.)
+moveit-ik-1       | [move_group-1] [WARN] [1786947916.896616228] [moveit_ros.planning_scene_monitor.planning_scene_monitor]: Unable to transform object from frame 'base' to planning frame'lychee_root' (Could not find a connection between 'lychee_root' and 'base' because they are not part of the same tree.Tf has two or more unconnected trees.)
+teleop-control-1  | [joint_splitter-2] 1786947916.532766 [0] joint_spli: selected interface "lo" is not multicast-capable: disabling multicast
+teleop-control-1  | [safety_gateway-1] 1786947916.532805 [0] safety_gat: selected interface "lo" is not multicast-capable: disabling multicast
+teleop-control-1  | [safety_gateway-1] /opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/node.py:440: UserWarning: when declaring parameter named 'allowed_sources', declaring a parameter only providing its name is deprecated. You have to either:
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a default value different to "PARAMETER NOT SET" (and optionally a descriptor).
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a parameter type.
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a descriptor with `dynamic_typing=True
+teleop-control-1  | [safety_gateway-1]   warnings.warn(
+teleop-control-1  | [safety_gateway-1] /opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/node.py:440: UserWarning: when declaring parameter named 'state_timeout', declaring a parameter only providing its name is deprecated. You have to either:
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a default value different to "PARAMETER NOT SET" (and optionally a descriptor).
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a parameter type.
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a descriptor with `dynamic_typing=True
+teleop-control-1  | [safety_gateway-1]   warnings.warn(
+teleop-control-1  | [safety_gateway-1] /opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/node.py:440: UserWarning: when declaring parameter named 'command_timeout', declaring a parameter only providing its name is deprecated. You have to either:
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a default value different to "PARAMETER NOT SET" (and optionally a descriptor).
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a parameter type.
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a descriptor with `dynamic_typing=True
+teleop-control-1  | [safety_gateway-1]   warnings.warn(
+teleop-control-1  | [safety_gateway-1] /opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/node.py:440: UserWarning: when declaring parameter named 'max_joint_speed', declaring a parameter only providing its name is deprecated. You have to either:
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a default value different to "PARAMETER NOT SET" (and optionally a descriptor).
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a parameter type.
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a descriptor with `dynamic_typing=True
+teleop-control-1  | [safety_gateway-1]   warnings.warn(
+teleop-control-1  | [safety_gateway-1] /opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/node.py:440: UserWarning: when declaring parameter named 'max_initial_delta', declaring a parameter only providing its name is deprecated. You have to either:
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a default value different to "PARAMETER NOT SET" (and optionally a descriptor).
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a parameter type.
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a descriptor with `dynamic_typing=True
+teleop-control-1  | [safety_gateway-1]   warnings.warn(
+teleop-control-1  | [safety_gateway-1] /opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/node.py:440: UserWarning: when declaring parameter named 'nominal_dt', declaring a parameter only providing its name is deprecated. You have to either:
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a default value different to "PARAMETER NOT SET" (and optionally a descriptor).
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a parameter type.
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a descriptor with `dynamic_typing=True
+teleop-control-1  | [safety_gateway-1]   warnings.warn(
+teleop-control-1  | [safety_gateway-1] /opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/node.py:440: UserWarning: when declaring parameter named 'contact_torque_thresholds', declaring a parameter only providing its name is deprecated. You have to either:
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a default value different to "PARAMETER NOT SET" (and optionally a descriptor).
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a parameter type.
+teleop-control-1  | [safety_gateway-1] 	- Pass a name and a descriptor with `dynamic_typing=True
+teleop-control-1  | [safety_gateway-1]   warnings.warn(
+teleop-control-1  | [safety_gateway-1] [INFO] [1786947916.562056592] [teleop_safety_gateway]: Contact torque gating active (Nm per joint): 6.0, 6.0, 6.0, 6.0, 3.0, 3.0, 3.0
+teleop-control-1  | [safety_gateway-1] [INFO] [1786947916.567647759] [teleop_safety_gateway]: Teleoperation safety gateway is forwarding validated commands.
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948483.590664870] [teleop_safety_gateway]: contact gate holds left: j4 -6.1Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948483.600773178] [teleop_safety_gateway]: contact gate released left
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948483.710576398] [teleop_safety_gateway]: contact gate holds left: j4 -6.0Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948483.780624535] [teleop_safety_gateway]: contact gate released left
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948485.530612885] [teleop_safety_gateway]: contact gate holds left: j4 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948485.541138350] [teleop_safety_gateway]: contact gate released left
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948485.590648753] [teleop_safety_gateway]: contact gate holds left: j1 +6.0Nm, j4 -6.0Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948485.600707227] [teleop_safety_gateway]: contact gate holds left: j1 +6.4Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948485.620504900] [teleop_safety_gateway]: contact gate holds left: j4 -6.3Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948485.640743954] [teleop_safety_gateway]: contact gate released left
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948485.650523273] [teleop_safety_gateway]: contact gate holds left: j4 -6.1Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948485.660704469] [teleop_safety_gateway]: contact gate released left
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948488.470551496] [teleop_safety_gateway]: contact gate holds left: j4 -6.1Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948488.480591275] [teleop_safety_gateway]: contact gate released left
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948491.610636818] [teleop_safety_gateway]: contact gate holds left: j4 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948491.620660132] [teleop_safety_gateway]: contact gate released left
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948787.950579246] [teleop_safety_gateway]: contact gate holds right: j3 -6.5Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948787.980683970] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948787.990670431] [teleop_safety_gateway]: contact gate holds right: j3 -6.1Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948788.000865691] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948788.040705259] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948788.050618028] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948788.331033008] [teleop_safety_gateway]: contact gate holds right: j3 -6.3Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948788.431056259] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948791.590622431] [teleop_safety_gateway]: contact gate holds right: j3 -6.0Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948791.600617582] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948792.000665591] [teleop_safety_gateway]: contact gate holds right: j3 -6.0Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948792.010479307] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948792.130915623] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948792.250562412] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948933.250724325] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948933.270818195] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948934.560838134] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948934.630604150] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948934.650637149] [teleop_safety_gateway]: contact gate holds right: j3 -6.0Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948934.661224249] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948934.681151817] [teleop_safety_gateway]: contact gate holds right: j3 -6.3Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948934.700569122] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948934.780668273] [teleop_safety_gateway]: contact gate holds right: j3 -6.1Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948934.801106398] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948934.900843381] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948934.920582461] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948934.950590043] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948935.130726174] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948936.791127784] [teleop_safety_gateway]: contact gate holds right: j3 -6.4Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948937.021030523] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948940.200709852] [teleop_safety_gateway]: contact gate holds right: j3 -6.7Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948940.210705187] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948940.310656392] [teleop_safety_gateway]: contact gate holds right: j3 -6.5Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948940.340699988] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948940.371078359] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948940.440798487] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948940.460925904] [teleop_safety_gateway]: contact gate holds right: j3 -6.3Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948940.480938401] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948941.410702806] [teleop_safety_gateway]: contact gate holds right: j3 -6.6Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948941.420730166] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948941.540615721] [teleop_safety_gateway]: contact gate holds right: j3 -7.7Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948941.560898016] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948941.571059299] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948941.760757455] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948951.251273887] [teleop_safety_gateway]: contact gate holds right: j3 -6.0Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948951.320976372] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948954.540809803] [teleop_safety_gateway]: contact gate holds right: j3 -6.5Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948954.650920245] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948954.931288170] [teleop_safety_gateway]: contact gate holds right: j3 -7.1Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948955.080676470] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948955.300821054] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948955.500584921] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948959.810714482] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948959.901138265] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948960.451143800] [teleop_safety_gateway]: contact gate holds right: j3 -6.0Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948960.461067078] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948960.550895324] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948960.561014548] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948960.590675790] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948960.600576326] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948962.040840128] [teleop_safety_gateway]: contact gate holds right: j3 -6.3Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948962.050607937] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948962.070661907] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948962.180778492] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948963.741150876] [teleop_safety_gateway]: contact gate holds right: j3 -6.1Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948963.781027141] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948963.831107411] [teleop_safety_gateway]: contact gate holds right: j3 -6.2Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948963.910609110] [teleop_safety_gateway]: contact gate released right
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948964.420795440] [teleop_safety_gateway]: contact gate holds right: j3 -6.1Nm
+teleop-control-1  | [safety_gateway-1] [INFO] [1786948964.450544782] [teleop_safety_gateway]: contact gate released right
+franka-control-1  | [INFO] [launch]: All log files can be found below /root/.ros/log/2026-08-17-06-25-16-201562-user-Default-string-1
+franka-control-1  | [INFO] [launch]: Default logging verbosity is set to INFO
+franka-control-1  | [INFO] [robot_state_publisher-1]: process started with pid [31]
+franka-control-1  | [INFO] [taskset-2]: process started with pid [33]
+franka-control-1  | [INFO] [spawner-3]: process started with pid [35]
+franka-control-1  | [INFO] [spawner-4]: process started with pid [37]
+franka-control-1  | [INFO] [robot_state_publisher-5]: process started with pid [39]
+franka-control-1  | [INFO] [taskset-6]: process started with pid [41]
+franka-control-1  | [INFO] [spawner-7]: process started with pid [51]
+franka-control-1  | [INFO] [spawner-8]: process started with pid [58]
+franka-control-1  | [INFO] [set_bi_collision_behavior.py-9]: process started with pid [60]
+franka-control-1  | [INFO] [reset_to_initial_pose.py-10]: process started with pid [62]
+franka-control-1  | [taskset-2] 1786947916.447156 [0] franka_ros: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [taskset-2] [WARN] [1786947916.480080334] [left.controller_manager]: [Deprecated] Passing the robot description parameter directly to the control_manager node is deprecated. Use '~/robot_description' topic from 'robot_state_publisher' instead.
+franka-control-1  | [taskset-2] [INFO] [1786947916.484521104] [resource_manager]: Loading hardware 'left__FrankaHardwareInterface' 
+franka-control-1  | [taskset-2] [INFO] [1786947916.498811012] [resource_manager]: Initialize hardware 'left__FrankaHardwareInterface' 
+franka-control-1  | [taskset-2] [INFO] [1786947916.498866452] [FrankaHardwareInterface]: Parsed Franka ros2_control interface version: 0.1.0
+franka-control-1  | [taskset-2] [INFO] [1786947916.498869515] [FrankaHardwareInterface]: Connecting to robot at "172.16.0.2" ...
+franka-control-1  | [taskset-2] [INFO] [1786947916.506802837] [FrankaHardwareInterface]: libfranka: Setting thread priority to the highest possible value.
+franka-control-1  | [robot_state_publisher-1] 1786947916.528483 [0] robot_stat: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [taskset-6] 1786947916.530535 [0] franka_ros: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [robot_state_publisher-5] 1786947916.531923 [0] robot_stat: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [robot_state_publisher-5] [INFO] [1786947916.537913234] [right.robot_state_publisher]: got segment base
+franka-control-1  | [robot_state_publisher-5] [INFO] [1786947916.537963338] [right.robot_state_publisher]: got segment right_fr3_link0
+franka-control-1  | [robot_state_publisher-5] [INFO] [1786947916.537968097] [right.robot_state_publisher]: got segment right_fr3_link1
+franka-control-1  | [robot_state_publisher-5] [INFO] [1786947916.537970930] [right.robot_state_publisher]: got segment right_fr3_link2
+franka-control-1  | [robot_state_publisher-5] [INFO] [1786947916.537973672] [right.robot_state_publisher]: got segment right_fr3_link3
+franka-control-1  | [robot_state_publisher-5] [INFO] [1786947916.537976199] [right.robot_state_publisher]: got segment right_fr3_link4
+franka-control-1  | [robot_state_publisher-5] [INFO] [1786947916.537978657] [right.robot_state_publisher]: got segment right_fr3_link5
+franka-control-1  | [robot_state_publisher-5] [INFO] [1786947916.537981126] [right.robot_state_publisher]: got segment right_fr3_link6
+franka-control-1  | [robot_state_publisher-5] [INFO] [1786947916.537983888] [right.robot_state_publisher]: got segment right_fr3_link7
+franka-control-1  | [robot_state_publisher-5] [INFO] [1786947916.537986489] [right.robot_state_publisher]: got segment right_fr3_link8
+franka-control-1  | [taskset-6] [WARN] [1786947916.536078558] [right.controller_manager]: [Deprecated] Passing the robot description parameter directly to the control_manager node is deprecated. Use '~/robot_description' topic from 'robot_state_publisher' instead.
+franka-control-1  | [taskset-6] [INFO] [1786947916.536272256] [resource_manager]: Loading hardware 'right__FrankaHardwareInterface' 
+franka-control-1  | [taskset-6] [INFO] [1786947916.538503742] [resource_manager]: Initialize hardware 'right__FrankaHardwareInterface' 
+franka-control-1  | [taskset-6] [INFO] [1786947916.538556099] [FrankaHardwareInterface]: Parsed Franka ros2_control interface version: 0.1.0
+franka-control-1  | [taskset-6] [INFO] [1786947916.538559014] [FrankaHardwareInterface]: Connecting to robot at "172.16.1.2" ...
+franka-control-1  | [taskset-6] [INFO] [1786947916.538884478] [FrankaHardwareInterface]: libfranka: Setting thread priority to the highest possible value.
+franka-control-1  | [taskset-6] [INFO] [1786947916.548124971] [FrankaHardwareInterface]: Successfully connected to robot
+franka-control-1  | [taskset-6] [INFO] [1786947916.551381705] [right.service_server]: Service started
+franka-control-1  | [taskset-2] [INFO] [1786947916.551687445] [FrankaHardwareInterface]: Successfully connected to robot
+franka-control-1  | [taskset-2] [INFO] [1786947916.559548410] [left.service_server]: Service started
+franka-control-1  | [robot_state_publisher-1] [INFO] [1786947916.562022920] [left.robot_state_publisher]: got segment base
+franka-control-1  | [robot_state_publisher-1] [INFO] [1786947916.562085111] [left.robot_state_publisher]: got segment left_fr3_link0
+franka-control-1  | [robot_state_publisher-1] [INFO] [1786947916.562090282] [left.robot_state_publisher]: got segment left_fr3_link1
+franka-control-1  | [robot_state_publisher-1] [INFO] [1786947916.562093292] [left.robot_state_publisher]: got segment left_fr3_link2
+franka-control-1  | [robot_state_publisher-1] [INFO] [1786947916.562095874] [left.robot_state_publisher]: got segment left_fr3_link3
+franka-control-1  | [robot_state_publisher-1] [INFO] [1786947916.562098430] [left.robot_state_publisher]: got segment left_fr3_link4
+franka-control-1  | [robot_state_publisher-1] [INFO] [1786947916.562100917] [left.robot_state_publisher]: got segment left_fr3_link5
+franka-control-1  | [robot_state_publisher-1] [INFO] [1786947916.562103369] [left.robot_state_publisher]: got segment left_fr3_link6
+franka-control-1  | [robot_state_publisher-1] [INFO] [1786947916.562106064] [left.robot_state_publisher]: got segment left_fr3_link7
+franka-control-1  | [robot_state_publisher-1] [INFO] [1786947916.562108624] [left.robot_state_publisher]: got segment left_fr3_link8
+franka-control-1  | [taskset-6] [INFO] [1786947916.653497916] [right.action_server]: Action server started
+franka-control-1  | [taskset-6] [INFO] [1786947916.653533880] [resource_manager]: Successful initialization of hardware 'right__FrankaHardwareInterface'
+franka-control-1  | [taskset-6] [INFO] [1786947916.653566771] [FrankaHardwareInterface]: Register joint-based command interfaces
+franka-control-1  | [taskset-6] [INFO] [1786947916.653569001] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint1 for command interface position with index 0
+franka-control-1  | [taskset-6] [INFO] [1786947916.653571421] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint1 for command interface velocity with index 0
+franka-control-1  | [taskset-6] [INFO] [1786947916.653573020] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint1 for command interface effort with index 0
+franka-control-1  | [taskset-6] [INFO] [1786947916.653574653] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint2 for command interface position with index 1
+franka-control-1  | [taskset-6] [INFO] [1786947916.653576365] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint2 for command interface velocity with index 1
+franka-control-1  | [taskset-6] [INFO] [1786947916.653577831] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint2 for command interface effort with index 1
+franka-control-1  | [taskset-6] [INFO] [1786947916.653579404] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint3 for command interface position with index 2
+franka-control-1  | [taskset-6] [INFO] [1786947916.653582050] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint3 for command interface velocity with index 2
+franka-control-1  | [taskset-6] [INFO] [1786947916.653583555] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint3 for command interface effort with index 2
+franka-control-1  | [taskset-6] [INFO] [1786947916.653585200] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint4 for command interface position with index 3
+franka-control-1  | [taskset-6] [INFO] [1786947916.653586671] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint4 for command interface velocity with index 3
+franka-control-1  | [taskset-6] [INFO] [1786947916.653588116] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint4 for command interface effort with index 3
+franka-control-1  | [taskset-6] [INFO] [1786947916.653589620] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint5 for command interface position with index 4
+franka-control-1  | [taskset-6] [INFO] [1786947916.653591048] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint5 for command interface velocity with index 4
+franka-control-1  | [taskset-6] [INFO] [1786947916.653592815] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint5 for command interface effort with index 4
+franka-control-1  | [taskset-6] [INFO] [1786947916.653594285] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint6 for command interface position with index 5
+franka-control-1  | [taskset-6] [INFO] [1786947916.653595752] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint6 for command interface velocity with index 5
+franka-control-1  | [taskset-6] [INFO] [1786947916.653597171] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint6 for command interface effort with index 5
+franka-control-1  | [taskset-6] [INFO] [1786947916.653598682] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint7 for command interface position with index 6
+franka-control-1  | [taskset-6] [INFO] [1786947916.653600227] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint7 for command interface velocity with index 6
+franka-control-1  | [taskset-6] [INFO] [1786947916.653613356] [FrankaHardwareInterface]: Registering command interface: right_fr3_joint7 for command interface effort with index 6
+franka-control-1  | [taskset-6] [INFO] [1786947916.653615028] [FrankaHardwareInterface]: Register general purpose command interfaces
+franka-control-1  | [taskset-6] [INFO] [1786947916.653618193] [FrankaHardwareInterface]: Registering command interface: vx for command interface cartesian_velocity with index 0
+franka-control-1  | [taskset-6] [INFO] [1786947916.653620521] [FrankaHardwareInterface]: Registering command interface: vy for command interface cartesian_velocity with index 1
+franka-control-1  | [taskset-6] [INFO] [1786947916.653622205] [FrankaHardwareInterface]: Registering command interface: vz for command interface cartesian_velocity with index 2
+franka-control-1  | [taskset-6] [INFO] [1786947916.653623665] [FrankaHardwareInterface]: Registering command interface: wx for command interface cartesian_velocity with index 3
+franka-control-1  | [taskset-6] [INFO] [1786947916.653625165] [FrankaHardwareInterface]: Registering command interface: wy for command interface cartesian_velocity with index 4
+franka-control-1  | [taskset-6] [INFO] [1786947916.653627314] [FrankaHardwareInterface]: Registering command interface: wz for command interface cartesian_velocity with index 5
+franka-control-1  | [taskset-6] [INFO] [1786947916.653628905] [FrankaHardwareInterface]: Registering command interface: 0 for command interface cartesian_pose_command with index 0
+franka-control-1  | [taskset-6] [INFO] [1786947916.653632044] [FrankaHardwareInterface]: Registering command interface: 1 for command interface cartesian_pose_command with index 1
+franka-control-1  | [taskset-6] [INFO] [1786947916.653633711] [FrankaHardwareInterface]: Registering command interface: 2 for command interface cartesian_pose_command with index 2
+franka-control-1  | [taskset-6] [INFO] [1786947916.653635612] [FrankaHardwareInterface]: Registering command interface: 3 for command interface cartesian_pose_command with index 3
+franka-control-1  | [taskset-6] [INFO] [1786947916.653637166] [FrankaHardwareInterface]: Registering command interface: 4 for command interface cartesian_pose_command with index 4
+franka-control-1  | [taskset-6] [INFO] [1786947916.653638665] [FrankaHardwareInterface]: Registering command interface: 5 for command interface cartesian_pose_command with index 5
+franka-control-1  | [taskset-6] [INFO] [1786947916.653640181] [FrankaHardwareInterface]: Registering command interface: 6 for command interface cartesian_pose_command with index 6
+franka-control-1  | [taskset-6] [INFO] [1786947916.653641634] [FrankaHardwareInterface]: Registering command interface: 7 for command interface cartesian_pose_command with index 7
+franka-control-1  | [taskset-6] [INFO] [1786947916.653643083] [FrankaHardwareInterface]: Registering command interface: 8 for command interface cartesian_pose_command with index 8
+franka-control-1  | [taskset-6] [INFO] [1786947916.653644615] [FrankaHardwareInterface]: Registering command interface: 9 for command interface cartesian_pose_command with index 9
+franka-control-1  | [taskset-6] [INFO] [1786947916.653646158] [FrankaHardwareInterface]: Registering command interface: 10 for command interface cartesian_pose_command with index 10
+franka-control-1  | [taskset-6] [INFO] [1786947916.653648120] [FrankaHardwareInterface]: Registering command interface: 11 for command interface cartesian_pose_command with index 11
+franka-control-1  | [taskset-6] [INFO] [1786947916.653649593] [FrankaHardwareInterface]: Registering command interface: 12 for command interface cartesian_pose_command with index 12
+franka-control-1  | [taskset-6] [INFO] [1786947916.653651144] [FrankaHardwareInterface]: Registering command interface: 13 for command interface cartesian_pose_command with index 13
+franka-control-1  | [taskset-6] [INFO] [1786947916.653652614] [FrankaHardwareInterface]: Registering command interface: 14 for command interface cartesian_pose_command with index 14
+franka-control-1  | [taskset-6] [INFO] [1786947916.653654057] [FrankaHardwareInterface]: Registering command interface: 15 for command interface cartesian_pose_command with index 15
+franka-control-1  | [taskset-6] [INFO] [1786947916.653655782] [FrankaHardwareInterface]: Registering command interface: joint_3_position for command interface elbow_command with index 0
+franka-control-1  | [taskset-6] [INFO] [1786947916.653657404] [FrankaHardwareInterface]: Registering command interface: joint_4_sign for command interface elbow_command with index 1
+franka-control-1  | [taskset-6] [INFO] [1786947916.653705368] [resource_manager]: 'configure' hardware 'right__FrankaHardwareInterface' 
+franka-control-1  | [taskset-6] [INFO] [1786947916.653709342] [resource_manager]: Successful 'configure' of hardware 'right__FrankaHardwareInterface'
+franka-control-1  | [taskset-6] [INFO] [1786947916.653722781] [resource_manager]: 'activate' hardware 'right__FrankaHardwareInterface' 
+franka-control-1  | [taskset-6] [INFO] [1786947916.653822710] [FrankaHardwareInterface]: Started
+franka-control-1  | [taskset-6] [INFO] [1786947916.653825836] [resource_manager]: Successful 'activate' of hardware 'right__FrankaHardwareInterface'
+franka-control-1  | [taskset-2] [INFO] [1786947916.661698071] [left.action_server]: Action server started
+franka-control-1  | [taskset-2] [INFO] [1786947916.661730386] [resource_manager]: Successful initialization of hardware 'left__FrankaHardwareInterface'
+franka-control-1  | [taskset-2] [INFO] [1786947916.661759103] [FrankaHardwareInterface]: Register joint-based command interfaces
+franka-control-1  | [taskset-2] [INFO] [1786947916.661761578] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint1 for command interface position with index 0
+franka-control-1  | [taskset-2] [INFO] [1786947916.661764205] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint1 for command interface velocity with index 0
+franka-control-1  | [taskset-2] [INFO] [1786947916.661765832] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint1 for command interface effort with index 0
+franka-control-1  | [taskset-2] [INFO] [1786947916.661767451] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint2 for command interface position with index 1
+franka-control-1  | [taskset-2] [INFO] [1786947916.661769039] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint2 for command interface velocity with index 1
+franka-control-1  | [taskset-2] [INFO] [1786947916.661770733] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint2 for command interface effort with index 1
+franka-control-1  | [taskset-2] [INFO] [1786947916.661772303] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint3 for command interface position with index 2
+franka-control-1  | [taskset-2] [INFO] [1786947916.661774940] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint3 for command interface velocity with index 2
+franka-control-1  | [taskset-2] [INFO] [1786947916.661776422] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint3 for command interface effort with index 2
+franka-control-1  | [taskset-2] [INFO] [1786947916.661777959] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint4 for command interface position with index 3
+franka-control-1  | [taskset-2] [INFO] [1786947916.661779385] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint4 for command interface velocity with index 3
+franka-control-1  | [taskset-2] [INFO] [1786947916.661780845] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint4 for command interface effort with index 3
+franka-control-1  | [taskset-2] [INFO] [1786947916.661782393] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint5 for command interface position with index 4
+franka-control-1  | [taskset-2] [INFO] [1786947916.661783842] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint5 for command interface velocity with index 4
+franka-control-1  | [taskset-2] [INFO] [1786947916.661785504] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint5 for command interface effort with index 4
+franka-control-1  | [taskset-2] [INFO] [1786947916.661787031] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint6 for command interface position with index 5
+franka-control-1  | [taskset-2] [INFO] [1786947916.661788489] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint6 for command interface velocity with index 5
+franka-control-1  | [taskset-2] [INFO] [1786947916.661789933] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint6 for command interface effort with index 5
+franka-control-1  | [taskset-2] [INFO] [1786947916.661791464] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint7 for command interface position with index 6
+franka-control-1  | [taskset-2] [INFO] [1786947916.661792908] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint7 for command interface velocity with index 6
+franka-control-1  | [taskset-2] [INFO] [1786947916.661807030] [FrankaHardwareInterface]: Registering command interface: left_fr3_joint7 for command interface effort with index 6
+franka-control-1  | [taskset-2] [INFO] [1786947916.661808682] [FrankaHardwareInterface]: Register general purpose command interfaces
+franka-control-1  | [taskset-2] [INFO] [1786947916.661812240] [FrankaHardwareInterface]: Registering command interface: vx for command interface cartesian_velocity with index 0
+franka-control-1  | [taskset-2] [INFO] [1786947916.661814653] [FrankaHardwareInterface]: Registering command interface: vy for command interface cartesian_velocity with index 1
+franka-control-1  | [taskset-2] [INFO] [1786947916.661816253] [FrankaHardwareInterface]: Registering command interface: vz for command interface cartesian_velocity with index 2
+franka-control-1  | [taskset-2] [INFO] [1786947916.661817817] [FrankaHardwareInterface]: Registering command interface: wx for command interface cartesian_velocity with index 3
+franka-control-1  | [taskset-2] [INFO] [1786947916.661819468] [FrankaHardwareInterface]: Registering command interface: wy for command interface cartesian_velocity with index 4
+franka-control-1  | [taskset-2] [INFO] [1786947916.661821544] [FrankaHardwareInterface]: Registering command interface: wz for command interface cartesian_velocity with index 5
+franka-control-1  | [taskset-2] [INFO] [1786947916.661823119] [FrankaHardwareInterface]: Registering command interface: 0 for command interface cartesian_pose_command with index 0
+franka-control-1  | [taskset-2] [INFO] [1786947916.661826104] [FrankaHardwareInterface]: Registering command interface: 1 for command interface cartesian_pose_command with index 1
+franka-control-1  | [taskset-2] [INFO] [1786947916.661827663] [FrankaHardwareInterface]: Registering command interface: 2 for command interface cartesian_pose_command with index 2
+franka-control-1  | [taskset-2] [INFO] [1786947916.661829250] [FrankaHardwareInterface]: Registering command interface: 3 for command interface cartesian_pose_command with index 3
+franka-control-1  | [taskset-2] [INFO] [1786947916.661830777] [FrankaHardwareInterface]: Registering command interface: 4 for command interface cartesian_pose_command with index 4
+franka-control-1  | [taskset-2] [INFO] [1786947916.661832475] [FrankaHardwareInterface]: Registering command interface: 5 for command interface cartesian_pose_command with index 5
+franka-control-1  | [taskset-2] [INFO] [1786947916.661833922] [FrankaHardwareInterface]: Registering command interface: 6 for command interface cartesian_pose_command with index 6
+franka-control-1  | [taskset-2] [INFO] [1786947916.661835435] [FrankaHardwareInterface]: Registering command interface: 7 for command interface cartesian_pose_command with index 7
+franka-control-1  | [taskset-2] [INFO] [1786947916.661836966] [FrankaHardwareInterface]: Registering command interface: 8 for command interface cartesian_pose_command with index 8
+franka-control-1  | [taskset-2] [INFO] [1786947916.661838426] [FrankaHardwareInterface]: Registering command interface: 9 for command interface cartesian_pose_command with index 9
+franka-control-1  | [taskset-2] [INFO] [1786947916.661839923] [FrankaHardwareInterface]: Registering command interface: 10 for command interface cartesian_pose_command with index 10
+franka-control-1  | [taskset-2] [INFO] [1786947916.661841501] [FrankaHardwareInterface]: Registering command interface: 11 for command interface cartesian_pose_command with index 11
+franka-control-1  | [taskset-2] [INFO] [1786947916.661842999] [FrankaHardwareInterface]: Registering command interface: 12 for command interface cartesian_pose_command with index 12
+franka-control-1  | [taskset-2] [INFO] [1786947916.661844459] [FrankaHardwareInterface]: Registering command interface: 13 for command interface cartesian_pose_command with index 13
+franka-control-1  | [taskset-2] [INFO] [1786947916.661846143] [FrankaHardwareInterface]: Registering command interface: 14 for command interface cartesian_pose_command with index 14
+franka-control-1  | [taskset-2] [INFO] [1786947916.661847853] [FrankaHardwareInterface]: Registering command interface: 15 for command interface cartesian_pose_command with index 15
+franka-control-1  | [taskset-2] [INFO] [1786947916.661849719] [FrankaHardwareInterface]: Registering command interface: joint_3_position for command interface elbow_command with index 0
+franka-control-1  | [taskset-2] [INFO] [1786947916.661851395] [FrankaHardwareInterface]: Registering command interface: joint_4_sign for command interface elbow_command with index 1
+franka-control-1  | [taskset-2] [INFO] [1786947916.661901262] [resource_manager]: 'configure' hardware 'left__FrankaHardwareInterface' 
+franka-control-1  | [taskset-2] [INFO] [1786947916.661905324] [resource_manager]: Successful 'configure' of hardware 'left__FrankaHardwareInterface'
+franka-control-1  | [taskset-2] [INFO] [1786947916.661915598] [resource_manager]: 'activate' hardware 'left__FrankaHardwareInterface' 
+franka-control-1  | [taskset-2] [INFO] [1786947916.662028300] [FrankaHardwareInterface]: Started
+franka-control-1  | [taskset-2] [INFO] [1786947916.662031224] [resource_manager]: Successful 'activate' of hardware 'left__FrankaHardwareInterface'
+franka-control-1  | [taskset-6] [INFO] [1786947916.705067327] [right.controller_manager]: update rate is 1001 Hz
+franka-control-1  | [taskset-6] [INFO] [1786947916.705094857] [right.controller_manager]: Spawning controller_manager RT thread with scheduler priority: 98
+franka-control-1  | [taskset-6] [INFO] [1786947916.707473794] [right.controller_manager]: Successful set up FIFO RT scheduling policy with priority 98.
+franka-control-1  | [taskset-2] [INFO] [1786947916.947636931] [left.controller_manager]: update rate is 1001 Hz
+franka-control-1  | [taskset-2] [INFO] [1786947916.947682231] [left.controller_manager]: Spawning controller_manager RT thread with scheduler priority: 98
+franka-control-1  | [taskset-2] [INFO] [1786947916.952573244] [left.controller_manager]: Successful set up FIFO RT scheduling policy with priority 98.
+franka-control-1  | [set_bi_collision_behavior.py-9] 1786947917.192052 [0]    python3: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [spawner-4] 1786947917.260160 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [spawner-7] 1786947917.279981 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [spawner-8] 1786947917.293230 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [spawner-3] 1786947917.317093 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [reset_to_initial_pose.py-10] 1786947917.409604 [0]    python3: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [taskset-2] [INFO] [1786947917.440779888] [left.controller_manager]: Loading controller 'franka_robot_state_broadcaster'
+franka-control-1  | [set_bi_collision_behavior.py-9] [INFO] [1786947917.452047355] [collision_behavior_setter]: Setting left collision thresholds: torque [40.0, 40.0, 36.0, 36.0, 32.0, 28.0, 24.0]/[60.0, 60.0, 50.0, 50.0, 45.0, 40.0, 35.0] Nm, force [30.0, 30.0, 30.0, 30.0, 30.0, 30.0]/[50.0, 50.0, 50.0, 50.0, 50.0, 50.0] N (acceleration = nominal).
+franka-control-1  | [set_bi_collision_behavior.py-9] [INFO] [1786947917.467896266] [collision_behavior_setter]: left arm accepted the collision thresholds.
+franka-control-1  | [set_bi_collision_behavior.py-9] [INFO] [1786947917.468217876] [collision_behavior_setter]: Setting right collision thresholds: torque [40.0, 40.0, 36.0, 36.0, 32.0, 28.0, 24.0]/[60.0, 60.0, 50.0, 50.0, 45.0, 40.0, 35.0] Nm, force [30.0, 30.0, 30.0, 30.0, 30.0, 30.0]/[50.0, 50.0, 50.0, 50.0, 50.0, 50.0] N (acceleration = nominal).
+franka-control-1  | [set_bi_collision_behavior.py-9] [INFO] [1786947917.477982610] [collision_behavior_setter]: right arm accepted the collision thresholds.
+franka-control-1  | [taskset-6] [INFO] [1786947917.484654645] [right.controller_manager]: Loading controller 'joint_state_broadcaster'
+franka-control-1  | [taskset-6] [INFO] [1786947917.513535076] [right.controller_manager]: Loading controller 'franka_robot_state_broadcaster'
+franka-control-1  | [taskset-2] [INFO] [1786947917.537860669] [left.controller_manager]: Loading controller 'joint_state_broadcaster'
+franka-control-1  | [spawner-7] [INFO] [1786947917.558909145] [right.spawner_joint_state_broadcaster]: [94mLoaded [1mjoint_state_broadcaster[0m
+franka-control-1  | [spawner-4] [INFO] [1786947917.560209771] [left.spawner_franka_robot_state_broadcaster]: [94mLoaded [1mfranka_robot_state_broadcaster[0m
+franka-control-1  | [taskset-6] [INFO] [1786947917.562847429] [right.controller_manager]: Configuring controller 'joint_state_broadcaster'
+franka-control-1  | [taskset-6] [INFO] [1786947917.562893320] [right.joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+franka-control-1  | [taskset-6] [WARN] [1786947917.566466981] [right.controller_manager]: The controller : joint_state_broadcaster update rate : 200 Hz is not a perfect divisor of the controller manager's update rate : 1001 Hz!. The controller will be updated with nearest divisor's update rate which is : 200 Hz.
+franka-control-1  | [spawner-8] [INFO] [1786947917.574170761] [right.spawner_franka_robot_state_broadcaster]: [94mLoaded [1mfranka_robot_state_broadcaster[0m
+franka-control-1  | [taskset-6] [INFO] [1786947917.578713314] [right.controller_manager]: Configuring controller 'franka_robot_state_broadcaster'
+franka-control-1  | [taskset-2] [INFO] [1786947917.579302271] [left.controller_manager]: Configuring controller 'franka_robot_state_broadcaster'
+franka-control-1  | [taskset-6] [WARN] [1786947917.583063387] [right.controller_manager]: The controller : franka_robot_state_broadcaster update rate : 100 Hz is not a perfect divisor of the controller manager's update rate : 1001 Hz!. The controller will be updated with nearest divisor's update rate which is : 100 Hz.
+franka-control-1  | [spawner-7] [INFO] [1786947917.589537895] [right.spawner_joint_state_broadcaster]: [92mConfigured and activated [1mjoint_state_broadcaster[0m
+franka-control-1  | [spawner-8] [INFO] [1786947917.599424208] [right.spawner_franka_robot_state_broadcaster]: [92mConfigured and activated [1mfranka_robot_state_broadcaster[0m
+franka-control-1  | [taskset-2] [WARN] [1786947917.617716487] [left.controller_manager]: The controller : franka_robot_state_broadcaster update rate : 100 Hz is not a perfect divisor of the controller manager's update rate : 1001 Hz!. The controller will be updated with nearest divisor's update rate which is : 100 Hz.
+franka-control-1  | [spawner-3] [INFO] [1786947917.620130773] [left.spawner_joint_state_broadcaster]: [94mLoaded [1mjoint_state_broadcaster[0m
+franka-control-1  | [taskset-2] [INFO] [1786947917.627702747] [left.controller_manager]: Configuring controller 'joint_state_broadcaster'
+franka-control-1  | [taskset-2] [INFO] [1786947917.627742080] [left.joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+franka-control-1  | [taskset-2] [WARN] [1786947917.641025609] [left.controller_manager]: The controller : joint_state_broadcaster update rate : 200 Hz is not a perfect divisor of the controller manager's update rate : 1001 Hz!. The controller will be updated with nearest divisor's update rate which is : 200 Hz.
+franka-control-1  | [spawner-4] [INFO] [1786947917.645831495] [left.spawner_franka_robot_state_broadcaster]: [92mConfigured and activated [1mfranka_robot_state_broadcaster[0m
+franka-control-1  | [spawner-3] [INFO] [1786947917.647915523] [left.spawner_joint_state_broadcaster]: [92mConfigured and activated [1mjoint_state_broadcaster[0m
+franka-control-1  | [INFO] [set_bi_collision_behavior.py-9]: process has finished cleanly [pid 60]
+franka-control-1  | [INFO] [launch.user]: Collision threshold configuration completed; starting left joint-impedance controller.
+franka-control-1  | [INFO] [spawner-11]: process started with pid [247]
+franka-control-1  | [INFO] [spawner-7]: process has finished cleanly [pid 51]
+franka-control-1  | [INFO] [spawner-8]: process has finished cleanly [pid 58]
+franka-control-1  | [INFO] [spawner-3]: process has finished cleanly [pid 35]
+franka-control-1  | [INFO] [spawner-4]: process has finished cleanly [pid 37]
+franka-control-1  | [spawner-11] 1786947917.958420 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [taskset-2] [INFO] [1786947918.195326053] [left.controller_manager]: Loading controller 'joint_impedance_controller'
+franka-control-1  | [spawner-11] [INFO] [1786947918.216739959] [left.spawner_joint_impedance_controller]: [94mLoaded [1mjoint_impedance_controller[0m
+franka-control-1  | [taskset-2] [INFO] [1786947918.218654660] [left.controller_manager]: Configuring controller 'joint_impedance_controller'
+franka-control-1  | [spawner-11] [INFO] [1786947918.242035602] [left.spawner_joint_impedance_controller]: [92mConfigured and activated [1mjoint_impedance_controller[0m
+franka-control-1  | [INFO] [spawner-11]: process has finished cleanly [pid 247]
+franka-control-1  | [INFO] [launch.user]: Left joint-impedance controller activation completed; starting right joint-impedance controller.
+franka-control-1  | [INFO] [spawner-12]: process started with pid [258]
+franka-control-1  | [spawner-12] 1786947918.570099 [0]    spawner: selected interface "lo" is not multicast-capable: disabling multicast
+franka-control-1  | [taskset-6] [INFO] [1786947918.606311822] [right.controller_manager]: Loading controller 'joint_impedance_controller'
+franka-control-1  | [spawner-12] [INFO] [1786947918.622607012] [right.spawner_joint_impedance_controller]: [94mLoaded [1mjoint_impedance_controller[0m
+franka-control-1  | [taskset-6] [INFO] [1786947918.624352733] [right.controller_manager]: Configuring controller 'joint_impedance_controller'
+franka-control-1  | [spawner-12] [INFO] [1786947918.644483513] [right.spawner_joint_impedance_controller]: [92mConfigured and activated [1mjoint_impedance_controller[0m
+franka-control-1  | [INFO] [spawner-12]: process has finished cleanly [pid 258]
+franka-control-1  | [INFO] [launch.user]: Right joint-impedance controller activation completed.
+franka-control-1  | [taskset-2] [INFO] [1786947919.224957516] [left.joint_impedance_controller]: Holding current position while waiting for valid joint commands.
+franka-control-1  | [taskset-6] [INFO] [1786947919.626898103] [right.joint_impedance_controller]: Holding current position while waiting for valid joint commands.
+franka-control-1  | [taskset-2] [INFO] [1786948480.260361029] [left.joint_impedance_controller]: Accepted joint command stream.
+franka-control-1  | [taskset-2] [WARN] [1786948504.261573501] [left.joint_impedance_controller]: Joint command stream timed out; holding the current position.
+franka-control-1  | [taskset-6] [INFO] [1786948759.675906591] [right.joint_impedance_controller]: Accepted joint command stream.
+franka-control-1  | [taskset-6] [WARN] [1786948804.677880388] [right.joint_impedance_controller]: Joint command stream timed out; holding the current position.
+franka-control-1  | [taskset-6] [INFO] [1786948919.683058049] [right.joint_impedance_controller]: Accepted joint command stream.
+franka-control-1  | [taskset-2] [INFO] [1786948921.281062924] [left.joint_impedance_controller]: Accepted joint command stream.
+franka-control-1  | [taskset-2] [WARN] [1786948972.283222487] [left.joint_impedance_controller]: Joint command stream timed out; holding the current position.
+franka-control-1  | [taskset-6] [WARN] [1786948976.685416176] [right.joint_impedance_controller]: Joint command stream timed out; holding the current position.

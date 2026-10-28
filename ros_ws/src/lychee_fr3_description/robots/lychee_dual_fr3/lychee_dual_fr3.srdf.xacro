@@ -1,0 +1,170 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="lychee_dual_fr3">
+
+  <xacro:include filename="$(find franka_description)/robots/common/group_definition.xacro"/>
+
+  <xacro:arg name="robot_types" default="['fr3v2','fr3v2']"/>
+  <xacro:property name="robot_types_list" value="${$(arg robot_types)}"/>
+
+  <xacro:arg name="arm_prefixes" default="['left','right']"/>
+  <xacro:property name="arm_prefixes_list" value="${$(arg arm_prefixes)}"/>
+
+  <xacro:arg name="hand" default="false"/>
+
+  <xacro:property name="home_positions" value="${xacro.load_yaml('$(find lychee_fr3_description)/config/home_positions.yaml')}"/>
+  <xacro:property name="selected_home_positions" value="${home_positions['dual_arm_45']}"/>
+
+  <xacro:property name="left_prefix" value="${arm_prefixes_list[0] + '_' if arm_prefixes_list[0] else ''}"/>
+  <xacro:property name="right_prefix" value="${arm_prefixes_list[1] + '_' if arm_prefixes_list[1] else ''}"/>
+  <xacro:property name="left_full_prefix" value="${left_prefix + robot_types_list[0] + '_'}"/>
+  <xacro:property name="right_full_prefix" value="${right_prefix + robot_types_list[1] + '_'}"/>
+  <xacro:property name="mounting_base_link" value="dual_arm_45_base_link"/>
+  <xacro:property name="left_tip_link" value="${left_full_prefix + 'link8'}"/>
+  <xacro:property name="right_tip_link" value="${right_full_prefix + 'link8'}"/>
+
+  <xacro:macro name="standard_arm_collisions" params="full_arm_prefix">
+    <disable_collisions link1="${full_arm_prefix}link0" link2="${full_arm_prefix}link1" reason="Adjacent"/>
+    <disable_collisions link1="${full_arm_prefix}link0" link2="${full_arm_prefix}link2" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link0" link2="${full_arm_prefix}link3" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link0" link2="${full_arm_prefix}link4" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link1" link2="${full_arm_prefix}link2" reason="Adjacent"/>
+    <disable_collisions link1="${full_arm_prefix}link1" link2="${full_arm_prefix}link3" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link1" link2="${full_arm_prefix}link4" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link2" link2="${full_arm_prefix}link3" reason="Adjacent"/>
+    <disable_collisions link1="${full_arm_prefix}link2" link2="${full_arm_prefix}link4" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link2" link2="${full_arm_prefix}link6" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link3" link2="${full_arm_prefix}link4" reason="Adjacent"/>
+    <disable_collisions link1="${full_arm_prefix}link3" link2="${full_arm_prefix}link5" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link3" link2="${full_arm_prefix}link6" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link3" link2="${full_arm_prefix}link7" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link4" link2="${full_arm_prefix}link5" reason="Adjacent"/>
+    <disable_collisions link1="${full_arm_prefix}link4" link2="${full_arm_prefix}link6" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link4" link2="${full_arm_prefix}link7" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link4" link2="${full_arm_prefix}link8" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link5" link2="${full_arm_prefix}link6" reason="Adjacent"/>
+    <disable_collisions link1="${full_arm_prefix}link5" link2="${full_arm_prefix}link7" reason="Never"/>
+    <disable_collisions link1="${full_arm_prefix}link6" link2="${full_arm_prefix}link7" reason="Adjacent"/>
+    <disable_collisions link1="${full_arm_prefix}link6" link2="${full_arm_prefix}link8" reason="Default"/>
+    <disable_collisions link1="${full_arm_prefix}link7" link2="${full_arm_prefix}link8" reason="Adjacent"/>
+
+    <xacro:if value="$(arg hand)">
+      <disable_collisions link1="${full_arm_prefix}link0" link2="${full_arm_prefix}hand" reason="UserDisable"/>
+      <disable_collisions link1="${full_arm_prefix}link0" link2="${full_arm_prefix}leftfinger" reason="UserDisable"/>
+      <disable_collisions link1="${full_arm_prefix}link0" link2="${full_arm_prefix}rightfinger" reason="UserDisable"/>
+      <disable_collisions link1="${full_arm_prefix}link1" link2="${full_arm_prefix}hand" reason="UserDisable"/>
+      <disable_collisions link1="${full_arm_prefix}link1" link2="${full_arm_prefix}leftfinger" reason="UserDisable"/>
+      <disable_collisions link1="${full_arm_prefix}link1" link2="${full_arm_prefix}rightfinger" reason="UserDisable"/>
+      <disable_collisions link1="${full_arm_prefix}link2" link2="${full_arm_prefix}hand" reason="UserDisable"/>
+      <disable_collisions link1="${full_arm_prefix}link2" link2="${full_arm_prefix}leftfinger" reason="UserDisable"/>
+      <disable_collisions link1="${full_arm_prefix}link2" link2="${full_arm_prefix}rightfinger" reason="UserDisable"/>
+      <disable_collisions link1="${full_arm_prefix}link5" link2="${full_arm_prefix}hand" reason="UserDisable"/>
+      <disable_collisions link1="${full_arm_prefix}link5" link2="${full_arm_prefix}leftfinger" reason="UserDisable"/>
+      <disable_collisions link1="${full_arm_prefix}link5" link2="${full_arm_prefix}rightfinger" reason="UserDisable"/>
+    </xacro:if>
+  </xacro:macro>
+
+  <xacro:macro name="extra_arm_collisions" params="full_arm_prefix">
+    <disable_collisions link1="${full_arm_prefix}link0" link2="${full_arm_prefix}link5" reason="UserDisable"/>
+    <disable_collisions link1="${full_arm_prefix}link0" link2="${full_arm_prefix}link6" reason="UserDisable"/>
+    <disable_collisions link1="${full_arm_prefix}link0" link2="${full_arm_prefix}link7" reason="UserDisable"/>
+    <disable_collisions link1="${full_arm_prefix}link1" link2="${full_arm_prefix}link5" reason="UserDisable"/>
+    <disable_collisions link1="${full_arm_prefix}link1" link2="${full_arm_prefix}link6" reason="UserDisable"/>
+    <disable_collisions link1="${full_arm_prefix}link1" link2="${full_arm_prefix}link7" reason="UserDisable"/>
+    <disable_collisions link1="${full_arm_prefix}link2" link2="${full_arm_prefix}link5" reason="UserDisable"/>
+    <disable_collisions link1="${full_arm_prefix}link2" link2="${full_arm_prefix}link7" reason="UserDisable"/>
+  </xacro:macro>
+
+  <xacro:macro name="cross_arm_loop" params="left_idx right_idx_start right_idx_end">
+    <disable_collisions link1="${left_full_prefix}link${left_idx}" link2="${right_full_prefix}link${right_idx_start}" reason="Never"/>
+    <xacro:if value="${right_idx_start &lt; right_idx_end}">
+      <xacro:cross_arm_loop left_idx="${left_idx}" right_idx_start="${right_idx_start + 1}" right_idx_end="${right_idx_end}"/>
+    </xacro:if>
+  </xacro:macro>
+
+  <group name="both_arms">
+    <group name="left_arm"/>
+    <group name="right_arm"/>
+  </group>
+
+  <xacro:group_definition prefix="${left_full_prefix}" group_name="left_arm" tip_link="${left_tip_link}"/>
+  <xacro:group_definition prefix="${right_full_prefix}" group_name="right_arm" tip_link="${right_tip_link}"/>
+
+  <group_state name="ready" group="both_arms">
+    <joint name="${left_full_prefix}joint1" value="0"/>
+    <joint name="${left_full_prefix}joint2" value="${-pi/4}"/>
+    <joint name="${left_full_prefix}joint3" value="0"/>
+    <joint name="${left_full_prefix}joint4" value="${-3*pi/4}"/>
+    <joint name="${left_full_prefix}joint5" value="0"/>
+    <joint name="${left_full_prefix}joint6" value="${pi/2}"/>
+    <joint name="${left_full_prefix}joint7" value="${pi/4}"/>
+    <joint name="${right_full_prefix}joint1" value="0"/>
+    <joint name="${right_full_prefix}joint2" value="${-pi/4}"/>
+    <joint name="${right_full_prefix}joint3" value="0"/>
+    <joint name="${right_full_prefix}joint4" value="${-3*pi/4}"/>
+    <joint name="${right_full_prefix}joint5" value="0"/>
+    <joint name="${right_full_prefix}joint6" value="${pi/2}"/>
+    <joint name="${right_full_prefix}joint7" value="${pi/4}"/>
+  </group_state>
+
+  <group_state name="home" group="left_arm">
+    <joint name="${left_full_prefix}joint1" value="${selected_home_positions.left.joint1}"/>
+    <joint name="${left_full_prefix}joint2" value="${selected_home_positions.left.joint2}"/>
+    <joint name="${left_full_prefix}joint3" value="${selected_home_positions.left.joint3}"/>
+    <joint name="${left_full_prefix}joint4" value="${selected_home_positions.left.joint4}"/>
+    <joint name="${left_full_prefix}joint5" value="${selected_home_positions.left.joint5}"/>
+    <joint name="${left_full_prefix}joint6" value="${selected_home_positions.left.joint6}"/>
+    <joint name="${left_full_prefix}joint7" value="${selected_home_positions.left.joint7}"/>
+  </group_state>
+
+  <group_state name="home" group="right_arm">
+    <joint name="${right_full_prefix}joint1" value="${selected_home_positions.right.joint1}"/>
+    <joint name="${right_full_prefix}joint2" value="${selected_home_positions.right.joint2}"/>
+    <joint name="${right_full_prefix}joint3" value="${selected_home_positions.right.joint3}"/>
+    <joint name="${right_full_prefix}joint4" value="${selected_home_positions.right.joint4}"/>
+    <joint name="${right_full_prefix}joint5" value="${selected_home_positions.right.joint5}"/>
+    <joint name="${right_full_prefix}joint6" value="${selected_home_positions.right.joint6}"/>
+    <joint name="${right_full_prefix}joint7" value="${selected_home_positions.right.joint7}"/>
+  </group_state>
+
+  <group_state name="home" group="both_arms">
+    <joint name="${left_full_prefix}joint1" value="${selected_home_positions.left.joint1}"/>
+    <joint name="${left_full_prefix}joint2" value="${selected_home_positions.left.joint2}"/>
+    <joint name="${left_full_prefix}joint3" value="${selected_home_positions.left.joint3}"/>
+    <joint name="${left_full_prefix}joint4" value="${selected_home_positions.left.joint4}"/>
+    <joint name="${left_full_prefix}joint5" value="${selected_home_positions.left.joint5}"/>
+    <joint name="${left_full_prefix}joint6" value="${selected_home_positions.left.joint6}"/>
+    <joint name="${left_full_prefix}joint7" value="${selected_home_positions.left.joint7}"/>
+    <joint name="${right_full_prefix}joint1" value="${selected_home_positions.right.joint1}"/>
+    <joint name="${right_full_prefix}joint2" value="${selected_home_positions.right.joint2}"/>
+    <joint name="${right_full_prefix}joint3" value="${selected_home_positions.right.joint3}"/>
+    <joint name="${right_full_prefix}joint4" value="${selected_home_positions.right.joint4}"/>
+    <joint name="${right_full_prefix}joint5" value="${selected_home_positions.right.joint5}"/>
+    <joint name="${right_full_prefix}joint6" value="${selected_home_positions.right.joint6}"/>
+    <joint name="${right_full_prefix}joint7" value="${selected_home_positions.right.joint7}"/>
+  </group_state>
+
+  <virtual_joint name="world_joint" type="fixed" parent_frame="world" child_link="lychee_root"/>
+
+  <xacro:standard_arm_collisions full_arm_prefix="${left_full_prefix}"/>
+  <xacro:extra_arm_collisions full_arm_prefix="${left_full_prefix}"/>
+  <xacro:standard_arm_collisions full_arm_prefix="${right_full_prefix}"/>
+  <xacro:extra_arm_collisions full_arm_prefix="${right_full_prefix}"/>
+
+  <disable_collisions link1="${mounting_base_link}" link2="${left_full_prefix}link0" reason="Adjacent"/>
+  <disable_collisions link1="${mounting_base_link}" link2="${left_full_prefix}link1" reason="Never"/>
+  <disable_collisions link1="${mounting_base_link}" link2="${left_full_prefix}link2" reason="Never"/>
+  <disable_collisions link1="${mounting_base_link}" link2="${left_full_prefix}link3" reason="Never"/>
+  <disable_collisions link1="${mounting_base_link}" link2="${left_full_prefix}link4" reason="Never"/>
+  <disable_collisions link1="${mounting_base_link}" link2="${right_full_prefix}link0" reason="Adjacent"/>
+  <disable_collisions link1="${mounting_base_link}" link2="${right_full_prefix}link1" reason="Never"/>
+  <disable_collisions link1="${mounting_base_link}" link2="${right_full_prefix}link2" reason="Never"/>
+  <disable_collisions link1="${mounting_base_link}" link2="${right_full_prefix}link3" reason="Never"/>
+  <disable_collisions link1="${mounting_base_link}" link2="${right_full_prefix}link4" reason="Never"/>
+
+  <xacro:cross_arm_loop left_idx="0" right_idx_start="0" right_idx_end="4"/>
+  <xacro:cross_arm_loop left_idx="1" right_idx_start="0" right_idx_end="4"/>
+  <xacro:cross_arm_loop left_idx="2" right_idx_start="0" right_idx_end="3"/>
+  <xacro:cross_arm_loop left_idx="3" right_idx_start="0" right_idx_end="2"/>
+  <xacro:cross_arm_loop left_idx="4" right_idx_start="0" right_idx_end="2"/>
+
+</robot>

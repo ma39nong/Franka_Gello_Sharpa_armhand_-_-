@@ -1,0 +1,10 @@
+# Operator GUI preset actions. The files themselves are created by Arm UI in
+# ${TELEOP_DATA_ROOT}/arm_ui/actions as <side>__<action>.yaml.
+slots:
+  q:
+    label: "Preset 1: left kuai1"
+    side: left
+    action: kuai1
+    speed_scale: 0.65
+  w: null
+  e: null

@@ -1,0 +1,8 @@
+[taskset-6] [INFO] [1786945659.011666522] [right.controller_manager]: Loading controller 'joint_impedance_controller'
+[spawner-12] [INFO] [1786945659.026369759] [right.spawner_joint_impedance_controller]: [94mLoaded [1mjoint_impedance_controller[0m
+[taskset-6] [INFO] [1786945659.027408278] [right.controller_manager]: Configuring controller 'joint_impedance_controller'
+[spawner-12] [INFO] [1786945659.037381682] [right.spawner_joint_impedance_controller]: [92mConfigured and activated [1mjoint_impedance_controller[0m
+[INFO] [spawner-12]: process has finished cleanly [pid 258]
+[INFO] [launch.user]: Right joint-impedance controller activation completed.
+[taskset-2] [INFO] [1786945659.535651808] [left.joint_impedance_controller]: Holding current position while waiting for valid joint commands.
+[taskset-6] [INFO] [1786945660.029557282] [right.joint_impedance_controller]: Holding current position while waiting for valid joint commands.
