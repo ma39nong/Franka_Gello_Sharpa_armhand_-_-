@@ -460,7 +460,7 @@ def test_backend_crash_displays_disconnect_and_reconnects_safely(tmp_path):
         backend.join(timeout=2.0)
         _wait(application, lambda: window.connection_state == "disconnected")
         assert window.connection_indicator.text().startswith("DISCONNECTED")
-        assert "backend status unavailable" in window.status_label.toPlainText()
+        assert "backend status unavailable" in window.system_status_indicator.text()
         assert window.disconnect_message is not None
         assert window.disconnect_message.isVisible()
         assert window.disconnect_message.text() == (

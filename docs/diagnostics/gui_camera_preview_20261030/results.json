@@ -1,0 +1,194 @@
+{
+  "method": "Existing RosbagEpisodeRecorder, production camera QoS and contracts, actual running Orbbec cameras; 12 s per phase; inspect_bag trim_start=1.0, trim_end=0.2; image payload deserialized from saved bags. No arm/hand activation.",
+  "phases": {
+    "baseline": {
+      "bag": "/tmp/gui-camera-validation-20261030/baseline/episode1",
+      "failures": [],
+      "ui": null,
+      "streams": {
+        "/cam0/color/image_raw": {
+          "message_count": 238,
+          "frequency_hz": 20.002793309905755,
+          "max_internal_gap_ms": 89.243472
+        },
+        "/cam0/depth/image_raw": {
+          "message_count": 238,
+          "frequency_hz": 20.003775862089256,
+          "max_internal_gap_ms": 89.273668
+        },
+        "/cam1/color/image_raw": {
+          "message_count": 357,
+          "frequency_hz": 30.02583767105217,
+          "max_internal_gap_ms": 33.733596
+        },
+        "/cam2/color/image_raw": {
+          "message_count": 358,
+          "frequency_hz": 30.02580552716971,
+          "max_internal_gap_ms": 33.810789
+        }
+      },
+      "image_payloads": {
+        "/cam2/color/image_raw": {
+          "width": 640,
+          "height": 480,
+          "encoding": "rgb8",
+          "bytes": 921600,
+          "expected_bytes": 921600
+        },
+        "/cam1/color/image_raw": {
+          "width": 640,
+          "height": 480,
+          "encoding": "rgb8",
+          "bytes": 921600,
+          "expected_bytes": 921600
+        },
+        "/cam0/color/image_raw": {
+          "width": 640,
+          "height": 400,
+          "encoding": "rgb8",
+          "bytes": 768000,
+          "expected_bytes": 768000
+        },
+        "/cam0/depth/image_raw": {
+          "width": 640,
+          "height": 400,
+          "encoding": "16UC1",
+          "bytes": 512000,
+          "expected_bytes": 512000
+        }
+      }
+    },
+    "preview": {
+      "bag": "/tmp/gui-camera-validation-20261030/preview/episode0",
+      "failures": [],
+      "ui": {
+        "cameras_seen": [
+          0,
+          1,
+          2
+        ],
+        "collapsed": false,
+        "worker_running": true,
+        "worker_pid": 168102
+      },
+      "streams": {
+        "/cam0/color/image_raw": {
+          "message_count": 239,
+          "frequency_hz": 20.00310342770695,
+          "max_internal_gap_ms": 86.613326
+        },
+        "/cam0/depth/image_raw": {
+          "message_count": 239,
+          "frequency_hz": 20.003008549979572,
+          "max_internal_gap_ms": 86.521904
+        },
+        "/cam1/color/image_raw": {
+          "message_count": 358,
+          "frequency_hz": 30.02301987801364,
+          "max_internal_gap_ms": 33.849498
+        },
+        "/cam2/color/image_raw": {
+          "message_count": 358,
+          "frequency_hz": 30.02253936087552,
+          "max_internal_gap_ms": 34.150812
+        }
+      },
+      "image_payloads": {
+        "/cam0/depth/image_raw": {
+          "width": 640,
+          "height": 400,
+          "encoding": "16UC1",
+          "bytes": 512000,
+          "expected_bytes": 512000
+        },
+        "/cam0/color/image_raw": {
+          "width": 640,
+          "height": 400,
+          "encoding": "rgb8",
+          "bytes": 768000,
+          "expected_bytes": 768000
+        },
+        "/cam1/color/image_raw": {
+          "width": 640,
+          "height": 480,
+          "encoding": "rgb8",
+          "bytes": 921600,
+          "expected_bytes": 921600
+        },
+        "/cam2/color/image_raw": {
+          "width": 640,
+          "height": 480,
+          "encoding": "rgb8",
+          "bytes": 921600,
+          "expected_bytes": 921600
+        }
+      }
+    },
+    "collapsed": {
+      "bag": "/tmp/gui-camera-validation-20261030/collapsed/episode0",
+      "failures": [],
+      "ui": {
+        "cameras_seen": [
+          0,
+          1,
+          2
+        ],
+        "collapsed": true,
+        "worker_running": false,
+        "worker_pid": 168102
+      },
+      "streams": {
+        "/cam0/color/image_raw": {
+          "message_count": 238,
+          "frequency_hz": 19.9770144320221,
+          "max_internal_gap_ms": 72.901771
+        },
+        "/cam0/depth/image_raw": {
+          "message_count": 238,
+          "frequency_hz": 19.976756334282328,
+          "max_internal_gap_ms": 72.892384
+        },
+        "/cam1/color/image_raw": {
+          "message_count": 358,
+          "frequency_hz": 30.023475895720836,
+          "max_internal_gap_ms": 33.620075
+        },
+        "/cam2/color/image_raw": {
+          "message_count": 358,
+          "frequency_hz": 30.022900855700048,
+          "max_internal_gap_ms": 34.040973
+        }
+      },
+      "image_payloads": {
+        "/cam1/color/image_raw": {
+          "width": 640,
+          "height": 480,
+          "encoding": "rgb8",
+          "bytes": 921600,
+          "expected_bytes": 921600
+        },
+        "/cam2/color/image_raw": {
+          "width": 640,
+          "height": 480,
+          "encoding": "rgb8",
+          "bytes": 921600,
+          "expected_bytes": 921600
+        },
+        "/cam0/depth/image_raw": {
+          "width": 640,
+          "height": 400,
+          "encoding": "16UC1",
+          "bytes": 512000,
+          "expected_bytes": 512000
+        },
+        "/cam0/color/image_raw": {
+          "width": 640,
+          "height": 400,
+          "encoding": "rgb8",
+          "bytes": 768000,
+          "expected_bytes": 768000
+        }
+      }
+    }
+  }
+}

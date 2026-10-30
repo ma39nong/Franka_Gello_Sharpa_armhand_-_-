@@ -36,6 +36,20 @@ Wuji 和 powderweighing 都是显式可选项。前者通过 `--hand-source wuji
 ./ops/run/run_gello_full_teleop.sh --hand-source manus --hardware
 ```
 
+部署程序已启动本项目的臂或手控制服务时，可显式接管：
+
+```bash
+./ops/run/run_gello_full_teleop.sh --hand-source manus --hardware --takeover
+```
+
+`--takeover` 先停止同一 Docker Compose 项目中正在运行的 `teleop-control`、
+`hand-control`、`moveit-ik`、`preset-ik`、`gello-bridge`，再停止 `franka-control`，
+确认退出后才启动统一遥操。停止采用 30 秒宽限期，不运行 `compose down`，
+相机和独立采集服务保持运行。接管后臂和手仍默认失能，由 GUI 授权。
+不带该参数时仍拒绝接管。若 MoveIt/arm-ui 正占有机械臂，或宿主机控制端口
+被另一套 GUI/控制进程占用，启动会拒绝，不按进程名强制杀进程。原生手部
+双终端遥操应先正常退出，避免两套 SDK 并行访问同一设备。
+
 在该 GUI 中使能双臂和双手，并确认正常跟随后，在独立终端启动触觉采集器：
 
 ```bash

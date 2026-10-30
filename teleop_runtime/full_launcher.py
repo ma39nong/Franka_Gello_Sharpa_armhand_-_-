@@ -16,6 +16,7 @@ import threading
 
 ROOT=Path(__file__).resolve().parents[1]
 SERVICES={'franka-control','teleop-control','moveit-ik','preset-ik','gello-bridge','hand-control'}
+TAKEOVER_BLOCKERS={'moveit-fake','moveit-real','arm-ui'}
 
 
 def parser():
@@ -29,6 +30,8 @@ def parser():
     p.add_argument('--devices',default=str(ROOT/'config/litchibot/hand_devices.json'),help='One-time deployment serial mapping for normal hardware')
     p.add_argument('--profile',default='LYG226360006')
     p.add_argument('--control-port',type=int,default=5593)
+    p.add_argument('--takeover',action='store_true',
+                   help='Stop existing arm/hand control services in this Compose project before startup; leaves cameras/recorders untouched')
     p.add_argument('--fake-input',action='store_true',help='Manus synthetic input, allowed only with fake Sharpa')
     return p
 
@@ -85,7 +88,7 @@ def ensure_manus_bridge_current(root=ROOT):
         subprocess.run([str(root/'adapters/manus/scripts/build.sh')],cwd=root,check=True)
 
 
-def preflight(port):
+def preflight(port, *, takeover=False):
     from teleop_runtime.dds_buffers import check_receive_buffer
     check_receive_buffer()
     arm_port=deployment_port(ROOT,'TELEOP_CONTROL_PORT',5590)
@@ -103,7 +106,31 @@ def preflight(port):
     result=subprocess.run(['docker','compose','ps','--services','--status','running'],cwd=ROOT/'docker',
                           text=True,capture_output=True,check=True)
     existing=SERVICES.intersection(result.stdout.splitlines())
-    if existing:raise RuntimeError('Full launcher refuses to take over existing services: '+', '.join(sorted(existing)))
+    if takeover:
+        blockers=TAKEOVER_BLOCKERS.intersection(result.stdout.splitlines())
+        if blockers:
+            raise RuntimeError('Takeover refused while MoveIt/UI services are running: '+', '.join(sorted(blockers)))
+    if existing and not takeover:
+        raise RuntimeError('Full launcher refuses to take over existing services: '+', '.join(sorted(existing))+
+                           '; use --takeover to stop this project\'s existing arm/hand services explicitly')
+    if existing:
+        selected=existing
+        print('Taking over arms/hands: stopping '+', '.join(sorted(selected))+'; cameras/recorders are left running',flush=True)
+        # Stop command producers first, then release the Franka hardware owner.
+        # Never use Compose down: independent recording/camera services survive.
+        consumers=sorted(selected-{'franka-control'})
+        for group in (consumers,['franka-control'] if 'franka-control' in selected else []):
+            if group:
+                try:
+                    subprocess.run(['docker','compose','stop','--timeout','30',*group],
+                                   cwd=ROOT/'docker',check=True,timeout=45)
+                except subprocess.TimeoutExpired as error:
+                    raise RuntimeError('Takeover stop timed out; no new controllers were started. Inspect docker compose ps before retrying') from error
+        result=subprocess.run(['docker','compose','ps','--services','--status','running'],
+                              cwd=ROOT/'docker',text=True,capture_output=True,check=True)
+        remaining=(SERVICES|TAKEOVER_BLOCKERS).intersection(result.stdout.splitlines())
+        if remaining:
+            raise RuntimeError('Takeover did not release all controllers: '+', '.join(sorted(remaining)))
 
 
 def descendants(root_pid):
@@ -380,7 +407,7 @@ def main(argv=None):
             load_full_config(path)
             if args.hand_source=='manus' and not args.fake_input:
                 ensure_manus_bridge_current()
-            preflight(args.control_port)
+            preflight(args.control_port,takeover=args.takeover)
             print(f"FULL TELEOP source={data['source']} mode={data['mode']}; arms/hands initially DISABLED",flush=True)
             return FullLauncher(ROOT,path,data).run()
     except (ValueError,OSError,RuntimeError,subprocess.CalledProcessError) as error:

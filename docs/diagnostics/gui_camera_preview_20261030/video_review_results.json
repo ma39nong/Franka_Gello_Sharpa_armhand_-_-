@@ -1,0 +1,128 @@
+{
+  "review": {
+    "checks": {
+      "live_click_required": true,
+      "single_play_completed": true,
+      "replay_uses_cache": true,
+      "switch_live_deletes_cache": true,
+      "collapse_stops_and_cleans": true,
+      "bad_and_recording_disabled": true,
+      "source_files_unchanged": true
+    },
+    "events": [
+      "上次样本播放结束；可再次点击查看上次单次播放",
+      "上次样本播放结束；可再次点击查看上次单次播放"
+    ]
+  },
+  "terminal_exit": {
+    "during_play": {
+      "cache_deleted": true,
+      "worker_pid": 199943
+    },
+    "after_play": {
+      "cache_deleted": true,
+      "worker_pid": 199946
+    }
+  },
+  "recording_regression": {
+    "baseline": {
+      "bag": "/tmp/gui-camera-validation-20261030/baseline/episode2",
+      "failures": [],
+      "ui": null,
+      "streams": {
+        "/cam0/color/image_raw": {
+          "message_count": 238,
+          "frequency_hz": 19.995049603683622,
+          "max_internal_gap_ms": 75.862766
+        },
+        "/cam0/depth/image_raw": {
+          "message_count": 238,
+          "frequency_hz": 19.994985868361503,
+          "max_internal_gap_ms": 75.863488
+        },
+        "/cam1/color/image_raw": {
+          "message_count": 358,
+          "frequency_hz": 30.02394006041194,
+          "max_internal_gap_ms": 34.048684
+        },
+        "/cam2/color/image_raw": {
+          "message_count": 358,
+          "frequency_hz": 30.02339862470728,
+          "max_internal_gap_ms": 33.735498
+        }
+      }
+    },
+    "preview": {
+      "bag": "/tmp/gui-camera-validation-20261030/preview/episode1",
+      "failures": [],
+      "ui": {
+        "cameras_seen": [
+          0,
+          1,
+          2
+        ],
+        "collapsed": false,
+        "worker_running": true,
+        "worker_pid": 203698
+      },
+      "streams": {
+        "/cam0/color/image_raw": {
+          "message_count": 238,
+          "frequency_hz": 19.980527246238967,
+          "max_internal_gap_ms": 74.967762
+        },
+        "/cam0/depth/image_raw": {
+          "message_count": 238,
+          "frequency_hz": 19.980612540185707,
+          "max_internal_gap_ms": 74.783147
+        },
+        "/cam1/color/image_raw": {
+          "message_count": 359,
+          "frequency_hz": 30.02694260273705,
+          "max_internal_gap_ms": 33.967471
+        },
+        "/cam2/color/image_raw": {
+          "message_count": 359,
+          "frequency_hz": 30.02252790111113,
+          "max_internal_gap_ms": 34.010471
+        }
+      }
+    },
+    "collapsed": {
+      "bag": "/tmp/gui-camera-validation-20261030/collapsed/episode1",
+      "failures": [],
+      "ui": {
+        "cameras_seen": [
+          0,
+          1,
+          2
+        ],
+        "collapsed": true,
+        "worker_running": false,
+        "worker_pid": 203698
+      },
+      "streams": {
+        "/cam0/color/image_raw": {
+          "message_count": 238,
+          "frequency_hz": 19.989282885147023,
+          "max_internal_gap_ms": 95.17821
+        },
+        "/cam0/depth/image_raw": {
+          "message_count": 238,
+          "frequency_hz": 19.98931881123525,
+          "max_internal_gap_ms": 95.352085
+        },
+        "/cam1/color/image_raw": {
+          "message_count": 358,
+          "frequency_hz": 30.023559855775108,
+          "max_internal_gap_ms": 33.649005
+        },
+        "/cam2/color/image_raw": {
+          "message_count": 358,
+          "frequency_hz": 30.023336786468395,
+          "max_internal_gap_ms": 34.138441
+        }
+      }
+    }
+  }
+}

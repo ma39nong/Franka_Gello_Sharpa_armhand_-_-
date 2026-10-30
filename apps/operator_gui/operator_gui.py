@@ -47,6 +47,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QSizePolicy,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -319,11 +320,11 @@ class OperatorWindow(QMainWindow):
         root.setObjectName("operatorRoot")
         layout = QVBoxLayout(root)
 
-        self.system_status_heading = QLabel("系统状态")
+        self.system_status_heading = QLabel("视频预览")
         self.system_status_heading.setStyleSheet("font-weight: bold;")
         status_heading_row = QHBoxLayout()
         status_heading_row.addWidget(self.system_status_heading)
-        self.status_toggle = self._section_toggle("系统状态")
+        self.status_toggle = self._section_toggle("视频预览")
         status_heading_row.addWidget(self.status_toggle)
         status_heading_row.addStretch()
         self.connection_button = QToolButton()
@@ -333,15 +334,20 @@ class OperatorWindow(QMainWindow):
         self.connection_button.setMenu(connection_menu)
         status_heading_row.addWidget(self.connection_button)
         layout.addLayout(status_heading_row)
-        self.status_label = QPlainTextEdit("-")
+        self.status_label = QPlainTextEdit("")
         self.status_label.setReadOnly(True)
         self.status_label.setFixedHeight(100)
         self.status_label.setFont(
             QFontDatabase.systemFont(QFontDatabase.FixedFont)
         )
-        layout.addWidget(self.status_label)
+        # Keep this font/spacing reference for the unchanged storage sidebar.
+        self.status_label.hide()
+        from apps.operator_gui.camera_preview import CameraPreview
+        self.camera_preview = CameraPreview(REPO_ROOT, self)
+        self.camera_preview.notice.connect(lambda text: self.feedback.appendPlainText('[video] '+text))
+        layout.addWidget(self.camera_preview)
         self.status_toggle.toggled.connect(
-            lambda expanded: self._set_section_expanded(self.status_label, self.status_toggle, expanded, 100, "系统状态")
+            self._set_video_expanded
         )
 
         collection_heading = QLabel("数据采集")
@@ -352,7 +358,7 @@ class OperatorWindow(QMainWindow):
         collection_heading_row.addStretch()
         layout.addLayout(collection_heading_row)
         collection_box = QFrame()
-        collection_box.setFixedHeight(190)
+        collection_box.setFixedHeight(127)
         collection_box.setObjectName("collectionBox")
         collection_box.setStyleSheet("QFrame#collectionBox { background-color: white; border: 1px solid #e4e3ee; border-radius: 9px; }")
         collection_layout = QHBoxLayout(collection_box)
@@ -389,7 +395,7 @@ class OperatorWindow(QMainWindow):
             collection_layout.addWidget(button, alignment=Qt.AlignBottom)
         layout.addWidget(collection_box)
         self.collection_toggle.toggled.connect(
-            lambda expanded: self._set_section_expanded(collection_box, self.collection_toggle, expanded, 190, "数据采集")
+            lambda expanded: self._set_section_expanded(collection_box, self.collection_toggle, expanded, 127, "数据采集")
         )
 
         layout.addSpacing(6)
@@ -598,7 +604,17 @@ class OperatorWindow(QMainWindow):
         self.setCentralWidget(page)
         self.connection_indicator = QLabel()
         self.connection_indicator.setContentsMargins(4, 0, 4, 0)
+        self.system_status_indicator = QLabel("-")
+        self.system_status_indicator.setTextFormat(Qt.PlainText)
+        self.system_status_indicator.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.system_status_indicator.setMinimumWidth(0)
+        self.system_status_indicator.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.system_status_indicator.setContentsMargins(4, 0, 4, 0)
+        self.statusBar().addPermanentWidget(self.system_status_indicator, 1)
         self.statusBar().addPermanentWidget(self.connection_indicator)
+        # Reserve the status bar's resize-grip width on the left as well, so
+        # the two text labels have matching distances from the window edges.
+        self.statusBar().setContentsMargins(22, 0, 0, 0)
         self.resize(1320, 1030)
 
     def _section_toggle(self, name: str) -> QToolButton:
@@ -616,6 +632,11 @@ class OperatorWindow(QMainWindow):
         widget.setVisible(expanded)
         button.setArrowType(Qt.DownArrow if expanded else Qt.RightArrow)
         button.setToolTip(("折叠" if expanded else "展开") + name)
+
+    def _set_video_expanded(self, expanded: bool) -> None:
+        self.camera_preview.set_expanded(expanded)
+        self._set_section_expanded(self.camera_preview, self.status_toggle, expanded,
+                                   self.camera_preview.HEIGHT, "视频预览")
 
     def _set_log_expanded(self, expanded: bool) -> None:
         self.resize(self.width(), self.height() + (150 if expanded else -150))
@@ -1101,7 +1122,7 @@ class OperatorWindow(QMainWindow):
         self.connect_action.setEnabled(state != "connected")
         self.task_selector.setEnabled(not getattr(self,"arm_home_locked",False) and not self.task_edit_pending)
         if state == "disconnected":
-            self.status_label.setPlainText(
+            self._set_system_status(
                 "DISCONNECTED — backend status unavailable"
             )
         elif state == "connected":
@@ -1248,6 +1269,7 @@ class OperatorWindow(QMainWindow):
         self.collection_next_request_id += 1
         self.collection_pending[request_id] = command
         if command == "start":
+            self.camera_preview.update_collection_status(dict(self.collection_status, active=True, state='STARTING'))
             self.collection_state = "STARTING"
             self.collection_status_label.setText("STARTING — 正在启动新 episode…")
             self.collection_status_label.setToolTip("")
@@ -1358,6 +1380,7 @@ class OperatorWindow(QMainWindow):
                     )
     def _apply_collection_status(self, status: dict) -> None:
         self.collection_status = dict(status)
+        self.camera_preview.update_collection_status(status)
         self._apply_storage_status(status)
         state = str(status.get("state") or "UNKNOWN").upper()
         self.collection_state = state
@@ -1534,6 +1557,7 @@ class OperatorWindow(QMainWindow):
         dialog.deleteLater()
 
     def closeEvent(self, event) -> None:
+        self.camera_preview.close_preview()
         self._remember_storage_parent()
         self.transfer_panel.save_remote()
         if self.full_config:
@@ -1554,11 +1578,15 @@ class OperatorWindow(QMainWindow):
         super().closeEvent(event)
 
     # -------------------------------------------------------------- status
+    def _set_system_status(self, text: str) -> None:
+        self.system_status_indicator.setText(" · ".join(text.splitlines()))
+        self.system_status_indicator.setToolTip(text)
+
     def _apply_status(self, status: dict) -> None:
         self.last_status_at = time.monotonic()
         if self.connection_state != "connected":
             self._set_connection_state("connected")
-        self.status_label.setPlainText(str(status.get("status_line", "-")))
+        self._set_system_status(str(status.get("status_line", "-")))
         self.arms_available = bool(status.get("arm_available", True))
         active = status.get("active", {})
         authorized = status.get("arm_authorized", active)
