@@ -8,11 +8,41 @@ import tempfile
 import time
 from pathlib import Path
 
-from PySide6.QtCore import QProcess, QProcessEnvironment, Qt, QTimer, Signal
-from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, QPushButton
+from PySide6.QtCore import QProcess, QProcessEnvironment, Qt, QTimer, Signal, QSize, QPointF
+from PySide6.QtGui import QImage, QPixmap, QPainter, QPen, QColor, QPolygonF, QIcon
+from PySide6.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QGridLayout, QSizePolicy, QPushButton, QFileDialog
 
 COLOR_TOPIC = runpy.run_path(str(Path(__file__).resolve().parents[2] / 'ros_ws/src/teleop_core/teleop_core/contract.py'))['CAMERA_COLOR_TOPIC']
+
+
+def transport_icon(kind):
+    icon = QIcon()
+    for mode, color in ((QIcon.Normal, '#ffffff' if kind in {'play', 'pause'} else '#65548e'),
+                        (QIcon.Disabled, '#c1bdcc')):
+        pixmap = QPixmap(48, 48)
+        pixmap.setDevicePixelRatio(2)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(QPen(QColor(color), 1.7, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.setBrush(QColor(color))
+        if kind == 'play':
+            painter.setPen(Qt.NoPen)
+            painter.drawPolygon(QPolygonF([QPointF(9, 6), QPointF(18, 12), QPointF(9, 18)]))
+        elif kind == 'pause':
+            painter.setPen(Qt.NoPen)
+            painter.drawRoundedRect(7, 6, 4, 12, 1, 1)
+            painter.drawRoundedRect(14, 6, 4, 12, 1, 1)
+        else:
+            if kind == 'forward':
+                painter.translate(24, 0)
+                painter.scale(-1, 1)
+            painter.drawLine(5, 12, 19, 12)
+            painter.drawLine(5, 12, 9, 8)
+            painter.drawLine(5, 12, 9, 16)
+        painter.end()
+        icon.addPixmap(pixmap, mode)
+    return icon
 
 
 class CameraPreview(QWidget):
@@ -30,6 +60,12 @@ class CameraPreview(QWidget):
         self.expanded = True
         self.mode = None
         self.playing = False
+        self.paused = False
+        self.media_ready = False
+        self.collection_busy = False
+        self.control_id = 0
+        self.positions = {}
+        self.review_bag = None
         self.last_bag = None
         self.review_reason = '没有可回看的已完成样本'
         self.cache_path = None
@@ -49,18 +85,53 @@ class CameraPreview(QWidget):
             images.addWidget(image, 1)
             self.labels[index] = image
         layout.addLayout(images, 1)
-        controls = QHBoxLayout()
-        controls.addStretch()
+        controls = QGridLayout()
+        transport = QHBoxLayout()
+        self.back_button = QPushButton()
+        self.pause_button = QPushButton()
+        self.forward_button = QPushButton()
+        transport.setSpacing(6)
+        for button in (self.back_button, self.pause_button, self.forward_button):
+            transport.addWidget(button)
+        controls.addLayout(transport, 0, 1, alignment=Qt.AlignCenter)
+        modes = QHBoxLayout()
         self.live_button = QPushButton('当前视频流')
         self.live_button.setCheckable(True)
         self.last_button = QPushButton('查看上次')
-        for button in (self.live_button, self.last_button):
+        self.choose_button = QPushButton('选择样本')
+        for button in (self.live_button, self.last_button, self.choose_button):
+            modes.addWidget(button)
+        for button in (self.live_button, self.last_button, self.choose_button,
+                       self.back_button, self.pause_button, self.forward_button):
             button.setFocusPolicy(Qt.NoFocus)
             button.setStyleSheet('padding: 2px 8px;')
-            controls.addWidget(button)
+        for button, kind, name in ((self.back_button, 'back', '后退 0.5 秒'),
+                                   (self.forward_button, 'forward', '前进 0.5 秒')):
+            button.setFixedSize(28, 28)
+            button.setIcon(transport_icon(kind))
+            button.setIconSize(QSize(20, 20))
+            button.setAccessibleName(name)
+            button.setStyleSheet('QPushButton { background: transparent; border: none; padding: 0; border-radius: 14px; }'
+                                'QPushButton:hover { background: #eae4f8; }'
+                                'QPushButton:pressed { background: #ddd3f0; }'
+                                'QPushButton:disabled { background: transparent; }')
+        self.pause_button.setFixedSize(30, 30)
+        self.pause_button.setIconSize(QSize(21, 21))
+        self.pause_button.setStyleSheet('QPushButton { background: #65548e; border: none; border-radius: 15px; padding: 0; }'
+                                       'QPushButton:hover { background: #7965a5; }'
+                                       'QPushButton:pressed { background: #554378; }'
+                                       'QPushButton:disabled { background: #e6e2ee; }')
+        for button in (self.back_button, self.pause_button, self.forward_button):
+            button.setCursor(Qt.PointingHandCursor)
+        controls.addLayout(modes, 0, 2, alignment=Qt.AlignRight)
+        for column in range(3): controls.setColumnStretch(column, 1)
         layout.addLayout(controls)
         self.live_button.clicked.connect(self.select_live)
         self.last_button.clicked.connect(self.select_last)
+        self.choose_button.clicked.connect(self.select_episode)
+        self.pause_button.clicked.connect(self.toggle_pause)
+        self.back_button.clicked.connect(lambda: self.seek(-.5))
+        self.forward_button.clicked.connect(lambda: self.seek(.5))
         self.timer = QTimer(self)
         self.timer.setInterval(200)
         self.timer.timeout.connect(self.refresh)
@@ -71,6 +142,17 @@ class CameraPreview(QWidget):
         available = (self.root / 'portable_deps/litchi_hardware/.pixi/envs/ros2/bin/python').is_file()
         self.live_button.setEnabled(self.expanded and available)
         self.last_button.setEnabled(self.expanded and available and self.last_bag is not None and not self.playing)
+        self.choose_button.setEnabled(self.expanded and available and not self.collection_busy)
+        self.choose_button.setToolTip('选择已完成的 episode 文件夹或其 rosbag 子目录；录制和校验期间不可用')
+        review = self.mode in {'last', 'selected'} and self.media_ready
+        self.pause_button.setEnabled(self.expanded and (self.mode == 'live' or review))
+        play = self.paused or (review and not self.playing) or self.mode is None
+        self.pause_button.setIcon(transport_icon('play' if play else 'pause'))
+        self.pause_button.setAccessibleName('播放' if play else '暂停')
+        self.pause_button.setToolTip('播放' if play else '暂停')
+        for button in (self.back_button, self.forward_button):
+            button.setEnabled(self.expanded and review)
+            button.setToolTip(button.accessibleName()+'，三路同步；仅回看可用')
         self.live_button.setToolTip('选中并展开时读取实时图像；取消选中或折叠时停止读取')
         if not self.playing: self.last_button.setToolTip(self.review_reason)
 
@@ -79,6 +161,7 @@ class CameraPreview(QWidget):
         candidate = None
         reason = '没有可回看的已完成样本'
         busy = status.get('active') or str(status.get('state', '')).upper() in {'RECORDING','STARTING','STOPPING','VALIDATING'}
+        self.collection_busy = bool(busy)
         storage = status.get('storage') or {}
         if busy: reason = '正在录制或校验，结束后才可查看上次'
         elif (status.get('quality') == '报错' or status.get('failures')
@@ -106,7 +189,7 @@ class CameraPreview(QWidget):
                     if self._topic_check[1]: candidate, reason = bag.resolve(), '单次播放上一段已完成样本，不向 ROS 回放消息'
                     else: reason = '上次样本没有完整的三路彩色图像'
                 except (OSError, sqlite3.Error, ValueError): reason = '上次样本不在本机或 rosbag 文件不完整'
-        if self.mode == 'last' and candidate != self.last_bag:
+        if (self.mode == 'last' and candidate != self.last_bag) or (busy and self.mode == 'selected'):
             self.stop(); self.mode = None
         self.last_bag, self.review_reason = candidate, reason
         self.update_controls()
@@ -133,13 +216,86 @@ class CameraPreview(QWidget):
         self.live_button.setChecked(False)
         if self.mode == 'last' and self.process is not None and self.process.state() == QProcess.Running:
             self.playing = True
-            self.process.write(b'play\n')
+            self.paused = False
+            self.send_control('play')
         else:
-            self.stop()
-            self.mode, self.playing = 'last', True
-            for label in self.labels.values(): label.setText('正在准备回看…')
-            self.start('bag_preview_worker.py', [str(self.last_bag)])
+            self.begin_review(self.last_bag, 'last')
         self.timer.setInterval(33)
+        self.update_controls()
+
+    @staticmethod
+    def selected_bag(path):
+        """Accept an episode or bag directory, rejecting known incomplete recordings."""
+        path = Path(path).expanduser().resolve()
+        bag = path if (path/'metadata.yaml').is_file() else path/'rosbag'
+        for state_path in {path/'collection_state.json', bag/'collection_state.json', bag.parent/'collection_state.json'}:
+            if state_path.is_file():
+                state = json.loads(state_path.read_text())
+                if not isinstance(state, dict): raise ValueError('样本状态文件格式不正确')
+                if (not state.get('finalized') or state.get('failures') or state.get('quality') == '报错'
+                    or str(state.get('state', '')).upper() in {'ERROR','FAULT','FAILED','INCOMPLETE','INTERRUPTED'}):
+                    raise ValueError('样本未完成或校验报错，不能回看')
+        if not (bag/'metadata.yaml').is_file(): raise ValueError('请选择包含 metadata.yaml 的 episode 或 rosbag 文件夹')
+        files = list(bag.glob('*.db3'))
+        names = set()
+        for file in files:
+            with sqlite3.connect(file.resolve().as_uri()+'?mode=ro&immutable=1', uri=True) as db:
+                names.update(row[0] for row in db.execute('SELECT name FROM topics'))
+        if not {COLOR_TOPIC.format(index=i) for i in (2,0,1)} <= names:
+            raise ValueError('样本缺少三路彩色图像，或不是 SQLite rosbag')
+        return bag.resolve()
+
+    def select_episode(self):
+        if not self.choose_button.isEnabled(): return
+        path = QFileDialog.getExistingDirectory(self, '选择 episode 或 rosbag 文件夹',
+                                               str(self.last_bag or Path.home()/'franka_teleop_data'))
+        if not path: return
+        # The modal dialog can receive collector updates while open.
+        if self.collection_busy: return
+        try: bag = self.selected_bag(path)
+        except (OSError, ValueError, sqlite3.Error) as error:
+            self.notice.emit('选择样本失败：'+str(error))
+            return
+        self.begin_review(bag, 'selected')
+
+    def begin_review(self, bag, mode):
+        self.stop()
+        self.live_button.setChecked(False)
+        self.review_bag = bag
+        self.mode, self.playing = mode, True
+        for label in self.labels.values(): label.setText('正在准备回看…')
+        self.start('bag_preview_worker.py', [str(bag)])
+        self.timer.setInterval(33)
+        self.update_controls()
+
+    def send_control(self, command, **arguments):
+        self.control_id += 1
+        if self.process is not None:
+            self.process.write((json.dumps(dict(command=command, id=self.control_id, **arguments))+'\n').encode())
+
+    def toggle_pause(self):
+        if not self.pause_button.isEnabled(): return
+        if self.mode == 'live':
+            if not self.paused:
+                frames = self.frames.copy()
+                self.stop()
+                self.frames = frames
+                self.paused = True
+                self.refresh()
+            else:
+                self.paused = False
+                self.start()
+        elif self.media_ready:
+            self.paused = not self.paused if self.playing else False
+            self.playing = True
+            self.send_control('pause' if self.paused else 'resume')
+        self.update_controls()
+
+    def seek(self, seconds):
+        if self.mode not in {'last', 'selected'} or not self.media_ready: return
+        # Seeking after EOF previews the requested frame and stays paused.
+        if not self.playing: self.paused = True; self.playing = True
+        self.send_control('seek', seconds=seconds, paused=self.paused)
         self.update_controls()
 
     def start(self, worker='camera_preview_worker.py', arguments=()):
@@ -175,7 +331,8 @@ class CameraPreview(QWidget):
         if process is not None and process is not self.process: return
         self.playing = False
         self.frames.clear()
-        for label in self.labels.values(): label.setText('回看未完成' if self.mode == 'last' else '视频预览未连接')
+        self.media_ready = False
+        for label in self.labels.values(): label.setText('回看未完成' if self.mode in {'last', 'selected'} else '视频预览未连接')
         self.update_controls()
 
     def read_frames(self, process=None):
@@ -192,17 +349,25 @@ class CameraPreview(QWidget):
                     event = row['event']
                     if event == 'cache_created': self.cache_path = Path(row['cache'])
                     elif event == 'decoding': self.last_button.setToolTip(f"正在离线解码：{row['elapsed']:.1f} / {row['duration']:.1f} 秒；可切回当前视频流取消")
+                    elif event == 'ready':
+                        self.media_ready = True
+                        self.update_controls()
                     elif event == 'playback_done':
+                        if row.get('control_id') != self.control_id: continue
                         self.playing = False
-                        self.notice.emit('上次样本播放结束；可再次点击查看上次单次播放')
+                        self.notice.emit('样本播放结束；点击播放可重新播放，或使用前后移动键查看')
                         self.update_controls()
                     elif event == 'error':
                         self.playing = False
-                        self.notice.emit('查看上次失败：'+row.get('message','未知错误'))
+                        self.media_ready = False
+                        self.notice.emit('视频回看失败：'+row.get('message','未知错误'))
                         self.update_controls()
                     continue
                 index = row['camera']
                 if index not in self.labels: continue
+                if self.mode in {'last', 'selected'}:
+                    if row.get('control_id') != self.control_id: continue
+                    self.positions[index] = row['position']
                 image = QImage.fromData(base64.b64decode(row['jpeg'], validate=True))
                 if not image.isNull(): self.frames[index] = (time.monotonic(), QPixmap.fromImage(image))
             except (ValueError, KeyError, TypeError): continue
@@ -216,12 +381,12 @@ class CameraPreview(QWidget):
                 self.last_bag = None
                 self.review_reason = '上次样本已不在本机'
                 self.update_controls()
-        if self.mode == 'live' and self.process is None: self.start()
+        if self.mode == 'live' and self.process is None and not self.paused: self.start()
         for index, label in self.labels.items():
             frame = self.frames.get(index)
             if frame is None: continue
             when, pixmap = frame
-            if self.mode == 'live' and time.monotonic() - when > 2:
+            if self.mode == 'live' and not self.paused and time.monotonic() - when > 2:
                 label.clear(); label.setText('等待新图像')
             else:
                 label.setPixmap(pixmap.scaled(label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
@@ -231,7 +396,7 @@ class CameraPreview(QWidget):
         self.buffer = b''
         if self.process is not None:
             process, self.process = self.process, None
-            if self.mode == 'last':
+            if self.mode in {'last', 'selected'}:
                 process.closeWriteChannel()
                 if not process.waitForFinished(100):
                     process.terminate()
@@ -246,6 +411,10 @@ class CameraPreview(QWidget):
                 shutil.rmtree(path, ignore_errors=True)
             self.cache_path = None
         self.playing = False
+        self.paused = False
+        self.media_ready = False
+        self.control_id = 0
+        self.positions.clear()
         for label in self.labels.values(): label.clear(); label.setText('等待图像')
 
     def set_expanded(self, expanded):
@@ -255,7 +424,7 @@ class CameraPreview(QWidget):
         else:
             self.timer.stop()
             self.stop()
-            if self.mode == 'last': self.mode = None
+            if self.mode in {'last', 'selected'}: self.mode = None
         self.update_controls()
 
     def close_preview(self):

@@ -1,0 +1,82 @@
+{
+  "checks": {
+    "live_pause_stops_reader_and_freezes": true,
+    "live_resume_and_seek_disabled": true,
+    "selected_bag_pause_freezes_three_views": true,
+    "paused_seeks_half_second_synchronized": true,
+    "resume_from_seek_position": true,
+    "seek_after_end_stays_paused": true,
+    "play_after_end_restarts": true,
+    "recording_start_stops_review_and_cleans_cache": true,
+    "switch_live_cleans_selected_cache": true,
+    "source_recording_unchanged": true
+  },
+  "events": [
+    "样本播放结束；点击播放可重新播放，或使用前后移动键查看",
+    "样本播放结束；点击播放可重新播放，或使用前后移动键查看"
+  ],
+  "recording_validation": {
+    "duration_seconds": 12,
+    "failures": [],
+    "ui": {
+      "paused": false,
+      "reader": true,
+      "frames": 3,
+      "toggles": 8
+    },
+    "streams": {
+      "/cam0/color/image_raw": {
+        "message_count": 239,
+        "frequency_hz": 19.989025685589098,
+        "max_internal_gap_ms": 85.78829
+      },
+      "/cam0/depth/image_raw": {
+        "message_count": 239,
+        "frequency_hz": 19.989468486375824,
+        "max_internal_gap_ms": 85.862538
+      },
+      "/cam1/color/image_raw": {
+        "message_count": 359,
+        "frequency_hz": 30.023310677910544,
+        "max_internal_gap_ms": 34.037925
+      },
+      "/cam2/color/image_raw": {
+        "message_count": 359,
+        "frequency_hz": 30.022862273763828,
+        "max_internal_gap_ms": 34.217195
+      }
+    },
+    "saved_images": {
+      "/cam2/color/image_raw": {
+        "width": 640,
+        "height": 480,
+        "encoding": "rgb8",
+        "bytes": 921600,
+        "expected_bytes": 921600
+      },
+      "/cam1/color/image_raw": {
+        "width": 640,
+        "height": 480,
+        "encoding": "rgb8",
+        "bytes": 921600,
+        "expected_bytes": 921600
+      },
+      "/cam0/depth/image_raw": {
+        "width": 640,
+        "height": 400,
+        "encoding": "16UC1",
+        "bytes": 512000,
+        "expected_bytes": 512000
+      },
+      "/cam0/color/image_raw": {
+        "width": 640,
+        "height": 400,
+        "encoding": "rgb8",
+        "bytes": 768000,
+        "expected_bytes": 768000
+      }
+    },
+    "bag": "/tmp/gui-video-controls-20261030/preview/episode0"
+  },
+  "gui_tests_passed": 41
+}

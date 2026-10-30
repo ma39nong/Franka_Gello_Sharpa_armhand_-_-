@@ -332,7 +332,6 @@ class OperatorWindow(QMainWindow):
         self.connection_button.setAutoRaise(True)
         self.connection_button.setPopupMode(QToolButton.InstantPopup)
         self.connection_button.setMenu(connection_menu)
-        status_heading_row.addWidget(self.connection_button)
         layout.addLayout(status_heading_row)
         self.status_label = QPlainTextEdit("")
         self.status_label.setReadOnly(True)
@@ -406,10 +405,21 @@ class OperatorWindow(QMainWindow):
         self.arm_hold_buttons: dict[str, QPushButton] = {}
         self.hand_engage_buttons: dict[str, QPushButton] = {}
         self.capture_home_buttons: dict[str, QPushButton] = {}
+        self.arm_heading_labels: dict[str, QLabel] = {}
         # Compatibility alias used by existing integrations and tests.
         self.engage_buttons = self.arm_engage_buttons
         for side in SIDES:
-            box = QGroupBox(side.capitalize())
+            heading_row = QHBoxLayout()
+            heading_row.setContentsMargins(12, 0, 0, 0)
+            heading = QLabel(side.capitalize())
+            heading.setStyleSheet("font-weight: bold; color: #49445c;")
+            self.arm_heading_labels[side] = heading
+            heading_row.addWidget(heading)
+            heading_row.addStretch()
+            if side == 'right': heading_row.addWidget(self.connection_button)
+            controls_grid.addLayout(heading_row, 0, SIDES.index(side))
+            box = QGroupBox()
+            box.setStyleSheet("QGroupBox { margin-top: 0; }")
             grid = QGridLayout(box)
             hold_key = ARM_HOLD_KEY_HINTS[side]
             arm_engage = QPushButton("Start arm")
@@ -474,7 +484,7 @@ class OperatorWindow(QMainWindow):
             grid.addWidget(
                 self._button("Open hand", "open_hand", {"side": side}), 3, 0
             )
-            controls_grid.addWidget(box, 0, SIDES.index(side))
+            controls_grid.addWidget(box, 1, SIDES.index(side))
 
         actions = QHBoxLayout()
         disengage_all = self._button("DISENGAGE ALL", "disengage_all")
@@ -483,7 +493,7 @@ class OperatorWindow(QMainWindow):
         disengage_all.setStyleSheet(
             "background-color: #a83232; color: white; font-weight: bold;"
         )
-        controls_grid.addWidget(disengage_all, 1, 0)
+        controls_grid.addWidget(disengage_all, 2, 0)
         open_both = self._button("Open both hands", "open_hand", {"side": "both"})
         actions.addWidget(open_both, stretch=1)
         self.task_selector = QComboBox()
@@ -521,7 +531,7 @@ class OperatorWindow(QMainWindow):
             font = control.font()
             font.setPointSizeF(font.pointSizeF() + 2)
             control.setFont(font)
-        controls_grid.addLayout(actions, 1, 1)
+        controls_grid.addLayout(actions, 2, 1)
         layout.addLayout(controls_grid)
 
         log_heading_row = QHBoxLayout()

@@ -226,7 +226,11 @@ def test_removed_motion_controls_and_relocated_connection_menu(tmp_path):
         heading = window.system_status_heading
         button = window.connection_button
         assert button.parentWidget() is heading.parentWidget()
-        assert button.geometry().center().y() == heading.geometry().center().y()
+        assert button.geometry().top() > window.collection_status_label.parentWidget().geometry().bottom()
+        left_panel = window.arm_engage_buttons['left'].parentWidget()
+        assert button.geometry().bottom() < left_panel.geometry().top()
+        assert button.geometry().center().y() == window.arm_heading_labels['left'].geometry().center().y()
+        assert button.geometry().center().y() == window.arm_heading_labels['right'].geometry().center().y()
         assert button.geometry().left() > heading.geometry().right()
         actions = button.menu().actions()
         assert window.connect_action in actions

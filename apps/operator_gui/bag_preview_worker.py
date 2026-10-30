@@ -97,21 +97,54 @@ def export(bag, cache, stop):
     return paths
 
 
-def play(paths, stop):
+def play(paths, stop, commands):
+    """One synchronized timeline; commands never publish messages into ROS."""
     captures = [cv2.VideoCapture(str(path)) for path in paths]
     try:
         if not all(c.isOpened() for c in captures): raise ValueError('临时视频无法打开')
-        started, count = time.monotonic(), 0
+        total = min(int(c.get(cv2.CAP_PROP_FRAME_COUNT)) for c in captures)
+        if total < 1: raise ValueError('临时视频没有图像')
+        position, control_id, paused, ended = 0, 0, False, False
+        deadline = time.monotonic()
+        preview = False
         while not stop.is_set():
+            try:
+                command = commands.get(timeout=.02 if paused or ended else max(0., min(.02, deadline-time.monotonic())))
+            except queue.Empty:
+                command = None
+            if command is not None:
+                control_id = int(command.get('id', control_id))
+                action = command.get('command')
+                if action == 'pause': paused = True
+                elif action in {'resume', 'play'}:
+                    if ended or action == 'play': position = 0
+                    paused, ended = False, False
+                elif action == 'seek':
+                    # Seek relative to the displayed frame, to the nearest cached frame.
+                    current = position if preview else max(0, position-1)
+                    position = max(0, min(total-1, round((current/FPS + float(command['seconds']))*FPS)))
+                    ended, preview = False, True
+                    paused = bool(command.get('paused', paused))
+                for capture in captures: capture.set(cv2.CAP_PROP_POS_FRAMES, position)
+                deadline = time.monotonic()
+                emit(event='playback_state', control_id=control_id, paused=paused,
+                     position=max(0, position-1)/FPS, ended=ended)
+                if not commands.empty(): continue
+            if (paused or ended) and not preview: continue
+            if not preview and time.monotonic() < deadline: continue
             frames = [capture.read() for capture in captures]
-            if not all(ok for ok, _ in frames): break
-            if stop.wait(max(0., started+count/FPS-time.monotonic())): return
+            if not all(ok for ok, _ in frames):
+                ended = True
+                emit(event='playback_done', control_id=control_id, frames=position)
+                continue
             for index, (_, frame) in zip(ORDER, frames):
                 ok, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
                 if not ok: raise ValueError('回看图像编码失败')
-                emit(camera=index, jpeg=base64.b64encode(jpeg).decode('ascii'))
-            count += 1
-        if not stop.is_set(): emit(event='playback_done', frames=count)
+                emit(camera=index, jpeg=base64.b64encode(jpeg).decode('ascii'),
+                     control_id=control_id, position=position/FPS)
+            position += 1
+            preview = False
+            deadline = time.monotonic()+1/FPS
     finally:
         for capture in captures: capture.release()
 
@@ -124,7 +157,10 @@ def main():
     def control():
         try:
             for line in sys.stdin:
-                if line.strip() == 'play': commands.put('play')
+                try:
+                    command = json.loads(line)
+                    if isinstance(command, dict): commands.put(command)
+                except ValueError: continue
         finally: stop.set()
     threading.Thread(target=control, daemon=True).start()
     for sig in (signal.SIGINT, signal.SIGTERM): signal.signal(sig, lambda *_: stop.set())
@@ -134,11 +170,7 @@ def main():
         emit(event='cache_created', cache=temporary)
         try:
             paths = export(args.bag.resolve(), Path(temporary), stop)
-            play(paths, stop)
-            while not stop.is_set():
-                try: commands.get(timeout=.1)
-                except queue.Empty: continue
-                play(paths, stop)
+            play(paths, stop, commands)
         except InterruptedError: pass
         except Exception as error:
             emit(event='error', message=str(error))
