@@ -291,9 +291,15 @@ echo "Wait for READY, then use the operator GUI to start/stop each episode."
 echo "After stopping, wait for validation and select a quality rating."
 echo "Press Ctrl-C only when no episode is recording and you are finished collecting."
 
+# Shared cameras remain independent of this collector's lifetime.
+CAMERA_EXTERNAL=false
+if [[ "$WITH_CAMERAS" == true ]]; then
+  CAMERA_READY_TIMEOUT_SEC="$CAMERA_READY_TIMEOUT_SEC" "$REPO_ROOT/ops/run/start_teleop_cameras.sh" "$CAMERA_CONFIG"
+  CAMERA_EXTERNAL=true
+fi
 camera_mount=()
 if [[ "$WITH_CAMERAS" == true ]]; then
-  echo "Starting cam0/cam1/cam2 from: $CAMERA_CONFIG"
+  echo "Using shared cam0/cam1/cam2 from: $CAMERA_CONFIG"
   camera_mount=(-v "$CAMERA_CONFIG:/collection_camera_config.yaml:ro")
 fi
 collector_name="sharpa-tactile-data-collection-$$"
@@ -312,6 +318,7 @@ docker compose run -d --name "$collector_name" --no-deps \
   -e COLLECTION_WORKCELL_HASH="$WORKCELL_HASH" \
   -e COLLECTION_CONTROL_PORT="$COLLECTION_CONTROL_PORT" \
   -e COLLECTION_WITH_CAMERAS="$WITH_CAMERAS" \
+  -e COLLECTION_CAMERA_EXTERNAL="$CAMERA_EXTERNAL" \
   -e COLLECTION_CAMERA_CONFIG=/collection_camera_config.yaml \
   -e COLLECTION_CAMERA_READY_TIMEOUT_SEC="$CAMERA_READY_TIMEOUT_SEC" \
   -e COLLECTION_INCLUDE_HANDS="$INCLUDE_HANDS" \

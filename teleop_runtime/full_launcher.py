@@ -33,6 +33,7 @@ def parser():
     p.add_argument('--takeover',action='store_true',
                    help='Stop existing arm/hand control services in this Compose project before startup; leaves cameras/recorders untouched')
     p.add_argument('--fake-input',action='store_true',help='Manus synthetic input, allowed only with fake Sharpa')
+    p.add_argument('--no-cameras',action='store_true',help='Skip shared camera startup and automatic GUI video preview')
     return p
 
 
@@ -393,6 +394,17 @@ class FullLauncher:
                 for sig,handler in old.items():signal.signal(sig,handler)
 
 
+def start_camera_preview(args, root=ROOT):
+    if args.no_cameras or not (args.hardware or args.supervised_hardware_validation):
+        return False
+    try:
+        subprocess.run([str(Path(root)/'ops/run/start_teleop_cameras.sh')],cwd=root,check=True,timeout=140)
+        return True
+    except (subprocess.SubprocessError, OSError) as error:
+        print('Camera preview unavailable; arm/hand startup continues: '+str(error),flush=True)
+        return False
+
+
 def main(argv=None):
     args=parser().parse_args(argv)
     # Locked before any subprocess or Docker startup.
@@ -408,6 +420,8 @@ def main(argv=None):
             if args.hand_source=='manus' and not args.fake_input:
                 ensure_manus_bridge_current()
             preflight(args.control_port,takeover=args.takeover)
+            os.environ.pop('TELEOP_CAMERA_PREVIEW_AUTO',None)
+            if start_camera_preview(args): os.environ['TELEOP_CAMERA_PREVIEW_AUTO']='1'
             print(f"FULL TELEOP source={data['source']} mode={data['mode']}; arms/hands initially DISABLED",flush=True)
             return FullLauncher(ROOT,path,data).run()
     except (ValueError,OSError,RuntimeError,subprocess.CalledProcessError) as error:

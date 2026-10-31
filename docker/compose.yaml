@@ -338,6 +338,37 @@ services:
     tty: true
     command: bash
 
+  teleop-cameras:
+    <<: *runtime
+    profiles: [cameras]
+    privileged: true
+    ipc: private
+    tmpfs:
+      - /dev/shm
+    user: "${TELEOP_CAMERA_UID:-1000}:${TELEOP_CAMERA_GID:-1000}"
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - CYCLONEDDS_URI=file:///workspace/franka_upper_body_teleop/config/cyclonedds.xml
+      - ROS_LOCALHOST_ONLY=1
+      - ROS_DOMAIN_ID=${TELEOP_ROS_DOMAIN_ID:?Missing TELEOP_ROS_DOMAIN_ID in docker/.env}
+      - HOME=/tmp
+      - ORBBEC_SDK_LICENSE_ACCEPTED=${ORBBEC_SDK_LICENSE_ACCEPTED:-NO}
+      - TELEOP_CAMERA_CONFIG_HASH=${TELEOP_CAMERA_CONFIG_HASH:-}
+    volumes:
+      - ..:/workspace/franka_upper_body_teleop
+      - ${TELEOP_DATA_ROOT:?Missing TELEOP_DATA_ROOT in docker/.env}:/data
+      - /dev:/dev
+      - ${TELEOP_CAMERA_CONFIG:-../data_collection/config/cameras.yaml}:/collection_camera_config.yaml:ro
+      - ${TELEOP_DATA_ROOT:?Missing TELEOP_DATA_ROOT in docker/.env}:/collection_data
+    command:
+      - ros2
+      - launch
+      - teleop_camera_bringup
+      - triple_camera.launch.py
+      - deployment_config:=/collection_camera_config.yaml
+
   data-collection:
     <<: *runtime
     # Camera drivers share one SDK mutex inside this container.  Do not reuse

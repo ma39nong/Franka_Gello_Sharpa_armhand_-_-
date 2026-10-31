@@ -50,9 +50,14 @@ case "$COLLECTION_WITH_CAMERAS" in
     : "${COLLECTION_CAMERA_CONFIG:?}"
     : "${COLLECTION_CAMERA_READY_TIMEOUT_SEC:?}"
     : "${ORBBEC_SDK_LICENSE_ACCEPTED:?}"
-    setsid ros2 launch teleop_camera_bringup triple_camera.launch.py \
-      deployment_config:="$COLLECTION_CAMERA_CONFIG" &
-    camera_pid=$!
+    # Legacy direct invocation still starts its own drivers by default.
+    if [[ "${COLLECTION_CAMERA_EXTERNAL:-false}" == true ]]; then
+      echo "Using external shared camera topics; this collector will not stop their drivers."
+    else
+      setsid ros2 launch teleop_camera_bringup triple_camera.launch.py \
+        deployment_config:="$COLLECTION_CAMERA_CONFIG" &
+      camera_pid=$!
+    fi
 
     source_readiness_args=()
     # Only the continuity-enabled profile adds source-time gating; ordinary
@@ -77,7 +82,7 @@ PY_CONFIG
 
     camera_exited=false
     while pid_alive "$readiness_pid"; do
-      if ! pid_alive "$camera_pid"; then
+      if [[ -n "$camera_pid" ]] && ! pid_alive "$camera_pid"; then
         camera_exited=true
         stop_process_group "$readiness_pid"
         break
@@ -97,7 +102,7 @@ PY_CONFIG
       echo "Camera streams did not pass the recording readiness gate." >&2
       exit "$readiness_status"
     fi
-    if ! pid_alive "$camera_pid"; then
+    if [[ -n "$camera_pid" ]] && ! pid_alive "$camera_pid"; then
       echo "Three-camera bringup exited during startup." >&2
       exit 1
     fi

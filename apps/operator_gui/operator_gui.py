@@ -180,6 +180,7 @@ class QualityDialog(QDialog):
 
 
 class OperatorWindow(QMainWindow):
+    log_cleanup_finished = Signal(str)
     task_edit_finished = Signal(str, str, str)
     def __init__(
         self,
@@ -1735,6 +1736,20 @@ def main() -> int:
         collection_port=args.collection_port,
     )
     window.show()
+    if os.environ.get('TELEOP_CAMERA_PREVIEW_AUTO') == '1':
+        window.camera_preview.live_button.click()
+    window.log_cleanup_finished.connect(window.feedback.appendPlainText)
+    def clean_old_logs():
+        from apps.operator_gui.log_retention import cleanup_logs
+        try:
+            message = cleanup_logs(REPO_ROOT).message()
+        except Exception as error:
+            message = '[日志清理] 未完成：'+str(error)
+        try: window.log_cleanup_finished.emit(message)
+        except RuntimeError: pass  # The operator may have already closed the GUI.
+    # Filesystem scanning/deletion must not delay the GUI or its control timers.
+    QTimer.singleShot(0, lambda: threading.Thread(target=clean_old_logs, daemon=True,
+                                                 name='runtime-log-retention').start())
     return application.exec()
 
 

@@ -1,0 +1,77 @@
+{
+  "camera_only_validation": true,
+  "arms_and_hands_started": false,
+  "recording_duration_seconds": 12,
+  "failures": [],
+  "streams": {
+    "/cam0/color/image_raw": {
+      "message_count": 238,
+      "frequency_hz": 20.0005989765879,
+      "max_internal_gap_ms": 89.364765
+    },
+    "/cam0/depth/image_raw": {
+      "message_count": 238,
+      "frequency_hz": 19.9995741137105,
+      "max_internal_gap_ms": 89.274617
+    },
+    "/cam1/color/image_raw": {
+      "message_count": 359,
+      "frequency_hz": 30.026062660131252,
+      "max_internal_gap_ms": 39.916973
+    },
+    "/cam2/color/image_raw": {
+      "message_count": 359,
+      "frequency_hz": 30.02505626337843,
+      "max_internal_gap_ms": 36.449946
+    }
+  },
+  "images": {
+    "/cam1/color/image_raw": {
+      "width": 640,
+      "height": 480,
+      "encoding": "rgb8",
+      "bytes": 921600,
+      "expected_bytes": 921600
+    },
+    "/cam2/color/image_raw": {
+      "width": 640,
+      "height": 480,
+      "encoding": "rgb8",
+      "bytes": 921600,
+      "expected_bytes": 921600
+    },
+    "/cam0/depth/image_raw": {
+      "width": 640,
+      "height": 400,
+      "encoding": "16UC1",
+      "bytes": 512000,
+      "expected_bytes": 512000
+    },
+    "/cam0/color/image_raw": {
+      "width": 640,
+      "height": 400,
+      "encoding": "rgb8",
+      "bytes": 768000,
+      "expected_bytes": 768000
+    }
+  },
+  "gui": {
+    "automatic_live_checked": true,
+    "camera_indices": [
+      0,
+      1,
+      2
+    ],
+    "reader_running": true
+  },
+  "color_publisher_counts": {
+    "cam0": 1,
+    "cam1": 1,
+    "cam2": 1
+  },
+  "tests": {
+    "gui": 41,
+    "camera_takeover_reconnect": 18
+  },
+  "full_collector_limitation": "Full production collector still requires powered arm/hand and safety gateway topics; it was not made READY with hardware off. The original camera readiness gate and production RosbagEpisodeRecorder were exercised separately."
+}
