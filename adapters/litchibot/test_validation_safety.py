@@ -179,7 +179,14 @@ def test_guarded_driver_calls_original_stop_and_never_loads_sdk(tmp_path,monkeyp
     import secrets
     from sensor_msgs.msg import JointState
     from adapters.litchibot import validation_driver
-    from adapters.litchibot.validation_safety import control_paths
+    from adapters.litchibot import validation_safety
+    # Never contend with the real driver's ownership lock during mock tests.
+    def control_paths(unused):
+        directory=tmp_path/'guard-control'
+        directory.mkdir(mode=0o700,exist_ok=True)
+        return directory/'control.sock',directory/'status.json'
+    monkeypatch.setattr(validation_safety,'control_paths',control_paths)
+    monkeypatch.setattr(validation_driver,'control_paths',control_paths)
     import sharpa_driver.node as original
     from litchi_hardware.hardware.sharpa.mock import MockSharpaHand
     from litchi_hardware.hardware.sharpa.sdk_driver import SharpaSdkHand

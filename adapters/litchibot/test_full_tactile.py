@@ -7,17 +7,21 @@ from adapters.litchibot.full_tactile import FullTactilePublisher,fast_tactile_im
 
 
 @pytest.mark.parametrize('size',[1024,307200])
-def test_fast_image_is_byte_identical_to_original(size):
+def test_fast_image_preserves_fields_and_serialized_payload(size):
     pytest.importorskip('rclpy')
     from builtin_interfaces.msg import Time
-    from rclpy.serialization import serialize_message
+    from rclpy.serialization import serialize_message,deserialize_message
     from sharpa_driver.messages import tactile_image_message
     image=SimpleNamespace(height=1,width=size,encoding='mono8',step=size,
         data=bytes(range(256))*(size//256))
     stamp=Time(sec=123,nanosec=456)
     original=tactile_image_message(image,frame_id='left/index',stamp=stamp)
     fast=fast_tactile_image(image,frame_id='left/index',stamp=stamp)
-    assert serialize_message(original)==serialize_message(fast)
+    # CDR alignment padding is unspecified and may contain different bytes.
+    # Compare every field after serialization, including the complete payload.
+    assert original==fast
+    assert deserialize_message(serialize_message(original),type(original))==original
+    assert deserialize_message(serialize_message(fast),type(fast))==original
 
 
 def test_slow_publication_does_not_block_poll_or_move_sdk_to_worker(monkeypatch):
@@ -46,3 +50,27 @@ def test_slow_publication_does_not_block_poll_or_move_sdk_to_worker(monkeypatch)
         release.set();assert delivered.wait(1)
         assert seen==[1,3]  # Bounded latest snapshot, no stale-image FIFO.
     finally:release.set();publisher.close()
+
+
+@pytest.mark.parametrize('count',[1,9,10])
+def test_batches_preserve_every_channel_once_per_round_on_sdk_owner(monkeypatch,count):
+    pytest.importorskip('rclpy')
+    import sharpa_driver.messages as messages
+    monkeypatch.setattr(messages,'validate_tactile_route',lambda *a,**k:'unused')
+    # No frames needed: prove exactly which nonblocking SDK reads are made.
+    from enum import Enum
+    class Side(Enum):LEFT='left'
+    owner=threading.get_ident();reads=[]
+    def read(finger,**kwargs):
+        assert threading.get_ident()==owner and kwargs=={'timeout_s':0.0}
+        reads.append(finger);return None
+    node=SimpleNamespace(_hands={Side.LEFT:SimpleNamespace(read_tactile=read)},
+        _tactile_publishers={(Side.LEFT,i):{} for i in range(count)})
+    publisher=FullTactilePublisher(node,batch_size=2)
+    try:
+        for _ in range(2):
+            round_start=len(reads)
+            for _ in range((count+1)//2):
+                before=len(reads);publisher.poll();assert len(reads)-before<=2
+            assert reads[round_start:]==list(range(count))
+    finally:publisher.close()

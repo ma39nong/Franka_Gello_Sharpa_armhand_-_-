@@ -68,6 +68,15 @@ def test_normal_manus_original_sender(tmp_path, monkeypatch, isolated_guard_path
     monkeypatch.setattr(original, 'create_hand', create)
     def exercise(node):
         runtime = node.full
+        from adapters.litchibot.runtime_optimization import optimization_enabled
+        optimized=optimization_enabled()
+        assert node.full_tactile.batch_size==(2 if optimized else None)
+        assert hasattr(node,'runtime_diagnostics') is optimized
+        channels=len(node._tactile_publishers)
+        if channels:
+            rounds=(channels+1)//2 if optimized else 1
+            rate=float(node.get_parameter('tactile_poll_rate_hz').value)
+            assert node._tactile_timer.timer_period_ns*rounds==pytest.approx(1e9/rate,abs=rounds)
         assert runtime.standalone_manus and node._command_timeout_s == 0
         runtime.dispatch({'command': 'heartbeat', 'monotonic_ns': time.monotonic_ns()})
         def feed(value=.2, side='left', names=JOINT_NAMES, age=0):

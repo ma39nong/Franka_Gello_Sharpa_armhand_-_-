@@ -16,15 +16,29 @@ def fast_tactile_image(image,*,frame_id,stamp):
 
 
 class FullTactilePublisher:
-    def __init__(self,node):
+    def __init__(self,node,*,batch_size=None,diagnostics=None):
         self.node=node
+        self.batch_size=batch_size
+        self.diagnostics=diagnostics
+        self._cursor=0
         self.worker=DeferredTelemetry()
 
     def poll(self):
         from sharpa_driver.messages import validate_tactile_route
-        for (side,finger),publishers in self.node._tactile_publishers.items():
+        channels=list(self.node._tactile_publishers.items())
+        if self.batch_size is not None and channels:
+            if self._cursor>=len(channels):self._cursor=0
+            selected=channels[self._cursor:self._cursor+self.batch_size]
+            self._cursor+=len(selected)
+        else:selected=channels
+        for (side,finger),publishers in selected:
             try:
-                frame=self.node._hands[side].read_tactile(finger,timeout_s=0.0)
+                started=time.perf_counter()
+                try:
+                    frame=self.node._hands[side].read_tactile(finger,timeout_s=0.0)
+                finally:
+                    if self.diagnostics is not None:
+                        self.diagnostics.observe(f'{side.value}.{finger.value}.read_tactile',started)
                 if frame is None:continue
                 stamp=self.node.get_clock().now().to_msg()
                 frame_id=validate_tactile_route(frame,expected_side=side,expected_finger=finger)
