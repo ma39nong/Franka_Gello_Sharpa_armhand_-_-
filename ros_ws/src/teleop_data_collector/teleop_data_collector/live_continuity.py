@@ -19,7 +19,9 @@ class LiveContinuity:
         from rosidl_runtime_py.utilities import get_message
 
         required = [topic for topic in node.config.topics if topic.required]
-        self.monitor = ContinuityMonitor([topic.topic for topic in required])
+        self.monitor = ContinuityMonitor([topic.topic for topic in required],
+            mode=getattr(node.config, 'continuity_mode', 'legacy'),
+            alignment_policy=getattr(node.config, 'alignment_quality', None))
         self._recording_active = recording_active or (lambda: self.monitor.active)
         self.readiness = CameraReadiness([topic.topic for topic in required],
             rgb_enabled=getattr(node.config, 'rgb_preflight_enabled', False),
@@ -65,6 +67,9 @@ class LiveContinuity:
                         message = deserialize_message(serialized, cls)
                         stamp = message.header.stamp
                         header_ns = int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
+                    if self.monitor.mode == 'conversion_aligned':
+                        from .alignment_quality import validate_metadata
+                        validate_metadata(item.topic, message)
                     if camera:
                         brightness = brightness_error = None
                         if not recording and self.readiness.checks_brightness(item.topic):

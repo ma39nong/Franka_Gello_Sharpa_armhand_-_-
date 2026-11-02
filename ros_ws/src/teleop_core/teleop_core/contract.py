@@ -111,3 +111,6 @@ def require_exact_joint_names(actual, expected, *, label):
     if names != expected:
         raise ValueError(f"{label} joint names are out of order")
     return names
+
+# Recorded Sharpa Wave joint order (sharpa_wave_22_v1).
+SHARPA_JOINT_NAMES = ('thumb_CMC_FE', 'thumb_CMC_AA', 'thumb_MCP_FE', 'thumb_MCP_AA', 'thumb_IP', 'index_MCP_FE', 'index_MCP_AA', 'index_PIP', 'index_DIP', 'middle_MCP_FE', 'middle_MCP_AA', 'middle_PIP', 'middle_DIP', 'ring_MCP_FE', 'ring_MCP_AA', 'ring_PIP', 'ring_DIP', 'pinky_CMC', 'pinky_MCP_FE', 'pinky_MCP_AA', 'pinky_PIP', 'pinky_DIP')

@@ -2,6 +2,21 @@ teleop_data_collector:
   ros__parameters:
     bag_contract_version: 1
     continuity_enabled: true
+    # Rollback: change only continuity_mode to legacy.
+    continuity_mode: conversion_aligned
+    alignment_quality:
+      output_fps: 30
+      max_staleness_ms: 150
+      camera_short_gap_max_frames: 2
+      camera_short_gap_max_age_ms: 250
+      depth_short_gap_policy: known_compact_seams_only
+      trim_start_sec: 1.0
+      trim_end_sec: 0.2
+      arrival_settle_ms: 250
+      stop_on_confirmed_internal_invalid: true
+    legacy_gap_diagnostics:
+      enabled: true
+      exceedance_as_warning_only: true
     rgb_preflight_enabled: true
     rgb_brightness_threshold: 25.0
     rgb_preflight_stable_sec: 3.0

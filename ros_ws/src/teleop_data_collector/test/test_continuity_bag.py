@@ -103,3 +103,20 @@ def test_bag_driver_loss_event_fails_but_historical_counter_does_not(tmp_path, l
     if loss_event:
         assert report['continuity']['auto_stop_reason']['category'] == 'driver_queue'
         assert 1.9 < report['continuity']['auto_stop_reason']['recording_elapsed_sec'] < 2.1
+
+
+
+def test_alignment_rejects_metadata_count_mismatch_even_when_grid_valid(tmp_path):
+    import yaml
+    from teleop_data_collector.alignment_quality import AlignmentPolicy
+    path=tmp_path/'disk_counts';contract=write_camera_bag(path,30,0)
+    policy=AlignmentPolicy(trim_start_sec=0,trim_end_sec=0)
+    kwargs=dict(continuity_enabled=True,continuity_mode='conversion_aligned',alignment_quality=policy)
+    failures,report=inspect_bag(path,[contract],**kwargs)
+    assert not failures
+    metadata=path/'metadata.yaml';data=yaml.safe_load(metadata.read_text())
+    data['rosbag2_bagfile_information']['message_count']+=1
+    metadata.write_text(yaml.safe_dump(data))
+    failures,report=inspect_bag(path,[contract],**kwargs)
+    assert report['alignment_quality']['first_failure'] is None
+    assert any('message count' in f for f in failures)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from bisect import bisect_left
-from collections import defaultdict
+from collections import defaultdict, Counter
 from dataclasses import dataclass, field
 import math
 from pathlib import Path
@@ -290,6 +290,8 @@ def inspect_bag(
     trim_start_sec: float = 0.0,
     trim_end_sec: float = 0.0,
     continuity_enabled: bool = False,
+    continuity_mode: str = 'legacy',
+    alignment_quality=None,
 ) -> tuple[tuple[str, ...], dict[str, Any]]:
     """Read every recorded message and return completeness failures/report."""
     import rosbag2_py
@@ -298,7 +300,9 @@ def inspect_bag(
 
     configured = {item.topic: item for item in topic_contracts}
     from .continuity import ContinuityMonitor, policy_for_topic
-    continuity = ContinuityMonitor([item.topic for item in configured.values() if item.required]) if continuity_enabled else None
+    aligned_mode = continuity_enabled and continuity_mode == 'conversion_aligned'
+    continuity = ContinuityMonitor([item.topic for item in configured.values() if item.required],
+        mode=continuity_mode, alignment_policy=alignment_quality) if continuity_enabled else None
     continuity_started = False
     last_continuity_time = 0.0
     reader = rosbag2_py.SequentialReader()
@@ -321,11 +325,18 @@ def inspect_bag(
     health_topics = {CAMERA_DRIVER_HEALTH_TOPIC.format(index=i): i for i in range(3)}
     streams: dict[str, StreamSamples] = defaultdict(StreamSamples)
     content_failures: list[str] = []
+    if aligned_mode:
+        for item in configured.values():
+            if item.required and actual_types.get(item.topic) != item.type_name:
+                content_failures.append(f'{item.topic}: missing or incorrect message type')
     telemetry_counters = {"velocity_sources": set()}
     engagement_samples: dict[str, list[tuple[int, bool]]] = defaultdict(list)
 
+    disk_counts = Counter()
     while reader.has_next():
         topic, serialized, bag_time_ns = reader.read_next()
+        if aligned_mode:
+            disk_counts[topic] += 1
         if topic not in configured or topic not in message_classes:
             continue
         bag_time_ns = int(bag_time_ns)
@@ -368,7 +379,10 @@ def inspect_bag(
                 header_ns = _message_header_ns(message)
             else:
                 header_ns = message.header_time_ns
-        except ValueError as error:
+            if aligned_mode:
+                from .alignment_quality import validate_metadata
+                validate_metadata(topic, message)
+        except (ValueError, AttributeError, TypeError) as error:
             if continuity is not None:
                 continuity.invalid(topic, str(error), bag_time_ns / 1e9)
             if len(content_failures) < 100:
@@ -376,6 +390,7 @@ def inspect_bag(
             continue
         if continuity is not None:
             continuity.observe_message(topic, message, header_ns, bag_time_ns / 1e9)
+            continuity.advance_alignment(bag_time_ns / 1e9)
         if header_ns is not None:
             stream.header_times_ns.append(header_ns)
         try:
@@ -420,11 +435,14 @@ def inspect_bag(
         else None
     )
     common_source_end_ns = (
-        min(times[-1] for times in required_source_streams)
+        min(streams[item.topic].header_times_ns[-1] for item in required
+            if streams[item.topic].header_times_ns and (not aligned_mode or item.topic != VALIDATED_COMMAND_TOPIC))
         if required_source_streams
         else None
     )
     failures = list(content_failures)
+    if aligned_mode:
+        failures.extend(_alignment_integrity_failures(bag_path, disk_counts))
     source_effective_start_ns = (
         common_source_start_ns + int(trim_start_sec * 1_000_000_000)
         if common_source_start_ns is not None
@@ -482,7 +500,19 @@ def inspect_bag(
                 trim_end_sec=trim_end_sec,
             )
         )
-        if item.topic not in mode_aware_action_topics:
+        if aligned_mode:
+            # Raw gap, mean frequency and receive-time edge coverage are
+            # diagnostic only in B. The shared grid gate owns time quality.
+            if not report['message_count']:
+                failures.append(f'{item.topic}: no messages in bag')
+            if report['source_header_count'] != report['message_count']:
+                failures.append(f'{item.topic}: source header timestamps are missing')
+            if report['source_full_timing']['nonmonotonic_count']:
+                failures.append(f'{item.topic}: source header timestamps are not monotonic')
+            legacy = timing_failures(item.topic, report, min_frequency_hz=float(item.min_frequency_hz),
+                max_gap_ms=float(item.max_gap_ms), trim_start_sec=trim_start_sec, trim_end_sec=trim_end_sec)
+            boundary_warnings.extend('legacy timing diagnostic only: ' + f for f in legacy)
+        elif item.topic not in mode_aware_action_topics:
             failures.extend(
                 timing_failures(
                     item.topic,
@@ -510,6 +540,12 @@ def inspect_bag(
                 trim_end_sec=trim_end_sec,
             )
             reports[name] = report
+            if aligned_mode:
+                # Even HOLD uses a real historical command/state; converter
+                # Series cannot represent a side with no action ever recorded.
+                if not streams[name].header_times_ns:
+                    failures.append(f'{name}: no real action samples in bag')
+                continue
             failures.extend(
                 _engaged_action_failures(
                     name=name,
@@ -572,9 +608,12 @@ def inspect_bag(
             "hand state velocity provenance is not exclusively finite_difference"
         )
 
-    continuity_report = continuity.end(last_continuity_time) if continuity is not None else {}
+    continuity_report = continuity.end(last_continuity_time,
+        alignment_window=(source_effective_start_ns, source_effective_end_ns) if aligned_mode else None) if continuity is not None else {}
     failures.extend(continuity_report.get("failures", []))
     report = {
+        "continuity_mode": continuity_mode,
+        "alignment_quality": continuity_report.get('alignment_quality', {}),
         "continuity": continuity_report,
         "source_warnings": continuity_report.get("source_warnings", []),
         "bag_start_time_ns": global_start_ns,
@@ -843,6 +882,32 @@ def _engaged_action_failures(
             f"{max_gap_ms:.1f} ms (worst {worst_distance_ns / 1_000_000:.1f} ms)"
         ]
     return []
+
+
+def _alignment_integrity_failures(bag_path, counts):
+    """Mirror converter entry prerequisites without rewriting any bag files."""
+    import sqlite3
+    import yaml
+    failures = []
+    try:
+        meta = yaml.safe_load((bag_path / 'metadata.yaml').read_text())['rosbag2_bagfile_information']
+        if meta['storage_identifier'] != 'sqlite3' or meta.get('compression_format'):
+            failures.append('conversion alignment requires uncompressed sqlite3')
+        if sum(counts.values()) != meta['message_count']:
+            failures.append('bag message count differs from metadata')
+        expected = {v['topic_metadata']['name']: v['message_count'] for v in meta['topics_with_message_count']}
+        if set(counts).difference(expected) or any(counts.get(t, 0) != count for t, count in expected.items()):
+            failures.append('bag topic counts differ from metadata')
+        for relative in meta['relative_file_paths']:
+            path = (bag_path / relative).resolve()
+            if not path.is_relative_to(bag_path.resolve()) or not path.is_file():
+                failures.append('missing or unsafe bag volume'); continue
+            with sqlite3.connect(path.as_uri() + '?mode=ro&immutable=1', uri=True) as db:
+                if db.execute('PRAGMA quick_check').fetchone()[0] != 'ok':
+                    failures.append('incomplete or corrupt SQLite file')
+    except (OSError, ValueError, KeyError, TypeError, sqlite3.DatabaseError) as error:
+        failures.append('bag integrity check failed: ' + str(error))
+    return failures
 
 
 def _storage_id(bag_path: Path) -> str:

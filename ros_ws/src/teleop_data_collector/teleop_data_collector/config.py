@@ -28,6 +28,8 @@ class CollectorConfig:
     rgb_preflight_enabled: bool = False
     rgb_brightness_threshold: float = 25.0
     rgb_preflight_stable_sec: float = 3.0
+    continuity_mode: str = "legacy"
+    alignment_quality: Any = None
 
 
 def load_collector_config(node: Node) -> CollectorConfig:
@@ -40,6 +42,18 @@ def load_collector_config(node: Node) -> CollectorConfig:
     trim_end_sec = _get_nonnegative_float(node, "trim_end_sec", 0.0)
 
     continuity_enabled = _coerce_bool(_get_or_declare(node, "continuity_enabled", False), False)
+    continuity_mode = _get_required_string(node, 'continuity_mode', 'legacy')
+    if continuity_mode not in ('legacy', 'conversion_aligned'):
+        raise ValueError('Invalid continuity_mode')
+    from .alignment_quality import AlignmentPolicy
+    from dataclasses import asdict
+    defaults = AlignmentPolicy(trim_start_sec=trim_start_sec, trim_end_sec=trim_end_sec)
+    alignment = AlignmentPolicy(**{name: _get_or_declare(node, 'alignment_quality.' + name, value)
+                                  for name, value in asdict(defaults).items()})
+    if alignment.trim_start_sec != trim_start_sec or alignment.trim_end_sec != trim_end_sec:
+        raise ValueError('alignment_quality trims must match actual recording trims')
+    if continuity_mode == 'conversion_aligned' and not continuity_enabled:
+        raise ValueError('conversion_aligned requires continuity_enabled')
     rgb_enabled = _coerce_bool(_get_or_declare(node, "rgb_preflight_enabled", False), False)
     rgb_threshold = _get_nonnegative_float(node, "rgb_brightness_threshold", 25.0)
     rgb_duration = _get_nonnegative_float(node, "rgb_preflight_stable_sec", 3.0)
@@ -48,6 +62,8 @@ def load_collector_config(node: Node) -> CollectorConfig:
     provenance = {
         "rgb_preflight_policy": dict(enabled=rgb_enabled, threshold=rgb_threshold, stable_sec=rgb_duration),
         "continuity_enabled": continuity_enabled,
+        "continuity_mode": continuity_mode,
+        "alignment_quality": alignment.report(),
         "bag_contract_version": _get_or_declare(node, "bag_contract_version", 1),
         "teleoperator": _get_required_string(node, "teleoperator", ""),
         "workcell_id": _get_required_string(node, "workcell_id", ""),
@@ -79,6 +95,8 @@ def load_collector_config(node: Node) -> CollectorConfig:
         trim_end_sec=trim_end_sec,
         provenance=provenance,
         continuity_enabled=continuity_enabled,
+        continuity_mode=continuity_mode,
+        alignment_quality=alignment,
         rgb_preflight_enabled=rgb_enabled,
         rgb_brightness_threshold=rgb_threshold,
         rgb_preflight_stable_sec=rgb_duration,

@@ -907,3 +907,16 @@ def test_driver_queue_overflow_uses_existing_error_finalization(tmp_path, monkey
     state = json.loads((recorder.last_bag_dir/'collection_state.json').read_text())
     assert not state['finalized']
     assert state['auto_stop_reason']['camera_uptime_sec'] == 60
+
+
+
+def test_alignment_sidecar_cannot_finalize_with_failures_and_records_policy(tmp_path):
+    node=_Node([])
+    recorder=rosbag_recording_node.RosbagEpisodeRecorder(node,tmp_path,'episode',(),30,(),
+        provenance={'continuity_mode':'conversion_aligned'})
+    bag=tmp_path/'episode0';bag.mkdir()
+    recorder._write_state(bag,state='finalized',finalized=True,failures=['real invalid grid'])
+    state=json.loads((bag/'collection_state.json').read_text())
+    assert state['state']=='incomplete' and not state['finalized']
+    assert state['validation_policy']=='conversion-aligned-v1'
+    assert state['failures']==['real invalid grid']

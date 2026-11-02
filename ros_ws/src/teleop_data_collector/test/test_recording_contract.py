@@ -507,3 +507,15 @@ def test_head_depth_requires_native_packed_16uc1():
         _inspect_message_content(
             "/cam0/depth/image_raw", invalid, 100, 90, streams, counters
         )
+
+
+
+def test_tactile_conversion_policy_enabled_with_single_switch_rollback():
+    raw=_sharpa_tactile_config()
+    assert raw['continuity_mode']=='conversion_aligned'
+    assert raw['alignment_quality']['max_staleness_ms']==150
+    assert raw['alignment_quality']['output_fps']==30
+    assert raw['alignment_quality']['arrival_settle_ms']==250
+    assert raw['alignment_quality']['trim_start_sec']==raw['trim_start_sec']
+    assert raw['alignment_quality']['trim_end_sec']==raw['trim_end_sec']
+    assert 'continuity_mode' not in _sharpa_config()

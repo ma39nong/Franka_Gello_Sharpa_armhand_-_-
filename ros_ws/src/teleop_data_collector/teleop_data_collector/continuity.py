@@ -86,7 +86,12 @@ class StreamStats:
 
 
 class ContinuityMonitor:
-    def __init__(self, topics: list[str]):
+    def __init__(self, topics: list[str], *, mode="legacy", alignment_policy=None):
+        if mode not in ('legacy', 'conversion_aligned'):
+            raise ValueError('Unsupported continuity_mode: ' + str(mode))
+        self.mode = mode
+        self.alignment_policy = alignment_policy
+        self.alignment = None
         self._topics = topics
         self._lock = threading.RLock()
         self.session_id = uuid.uuid4().hex
@@ -109,6 +114,9 @@ class ContinuityMonitor:
             self.alerts = {}
             self.first_failure = None
             self.streams = {}
+            if self.mode == 'conversion_aligned':
+                from .alignment_quality import AlignmentQuality
+                self.alignment = AlignmentQuality(self._topics, self.alignment_policy)
             for topic in self._topics:
                 if topic == VALIDATED_COMMAND_TOPIC:
                     for side in ("left", "right"):
@@ -116,8 +124,12 @@ class ContinuityMonitor:
                 else:
                     self.streams[topic] = StreamStats(policy_for_topic(topic), waiting_since=now)
 
-    def end(self, now: float | None = None) -> dict[str, Any]:
+    def end(self, now: float | None = None, *, alignment_window=None) -> dict[str, Any]:
         with self._lock:
+            if self.alignment is not None and alignment_window is not None:
+                self.alignment.advance(now or time.monotonic(), final=True,
+                    start_ns=alignment_window[0], end_ns=alignment_window[1])
+                self._alignment_notice(now or time.monotonic())
             self.active = False
             self._ended_at = time.monotonic() if now is None else now
             return self.snapshot()
@@ -126,6 +138,8 @@ class ContinuityMonitor:
         with self._lock:
             if not self.active:
                 return
+            if self.alignment is not None:
+                self.alignment.observe(topic, message, header_ns, now)
             if topic == COMMAND_STATUS_TOPIC:
                 accepted = set(message.accepted_sides)
                 for side in ("left", "right"):
@@ -182,6 +196,8 @@ class ContinuityMonitor:
                 if severity:
                     field_name = f"source_gap_{severity}_count"
                     setattr(stats, field_name, getattr(stats, field_name) + 1)
+                    if self.mode == 'conversion_aligned':
+                        severity = 'warning'
                     self._notice(topic, severity, "source", gap, missing, now,
                                  "source 缺帧" if stats.policy.kind == "missing_frames" else "发布新鲜度缺口")
                 elif receive_gap > stats.policy.warning_gap_ms:
@@ -214,13 +230,14 @@ class ContinuityMonitor:
             if (bag_event if from_bag else dropped_at >= self.started_at) and health.get("queue_drop_total", 0) > 0:
                 previous = self.alerts.get((topic, "driver_queue"))
                 if previous is None:
-                    self._notice(topic, "failure", "driver_queue", None, None, now,
+                    self._notice(topic, "warning" if self.mode == 'conversion_aligned' else "failure", "driver_queue", None, None, now,
                                  "相机驱动颜色队列溢出，主动丢弃帧")
 
     def watchdog(self, now: float) -> None:
         with self._lock:
             if not self.active:
                 return
+            self.advance_alignment(now)
             for topic, stats in self.streams.items():
                 age = now - (stats.last_receive if stats.last_receive is not None else stats.waiting_since)
                 if stats.enabled and not stats.silence_reported and age > stats.policy.silence_sec:
@@ -228,6 +245,33 @@ class ContinuityMonitor:
                     stats.silence_failure_count += 1
                     self._notice(topic, "failure", "silence", age * 1000, None, now,
                                  "接收中断，源或传输原因待确认")
+
+    def advance_alignment(self, now):
+        with self._lock:
+            if self.active and self.alignment is not None:
+                self.alignment.advance(now)
+                self._alignment_notice(now)
+
+    def _alignment_notice(self, now):
+        reason = self.alignment.first_failure
+        if reason is None:
+            return
+        topic = reason.get('topic')
+        if topic not in self.streams:
+            topic = next(iter(self.streams))
+        key = (topic, 'alignment')
+        if key in self.alerts:
+            return
+        message = reason['message']
+        if reason.get('grid_index') is not None:
+            failed_topic = reason.get('topic', topic)
+            age = reason.get('ages_ns', {}).get(failed_topic)
+            age_text = '无可用历史样本' if age is None else f'age={age / 1e6:.3f} ms'
+            message = f"30 Hz 对齐质量失败：内部网格 #{reason['grid_index']}，{failed_topic}，{age_text}"
+        self._notice(topic, 'failure', 'alignment', None, None, now, message)
+        self.alerts[key].update(alignment=dict(reason))
+        if self.first_failure is not None and self.first_failure['id'] == self.alerts[key]['id']:
+            self.first_failure.update(alignment=dict(reason))
 
     def _notice(self, topic: str, severity: str, category: str, gap: float | None,
                 missing: int | None, now: float, message: str) -> None:
@@ -258,7 +302,10 @@ class ContinuityMonitor:
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
             alerts = [dict(value) for value in self.alerts.values()]
-            return {"episode": self.episode, "session_id": self.session_id,
+            return {"continuity_mode": self.mode,
+                    "alignment_quality": self.alignment.report() if self.alignment is not None else {},
+                    "legacy_gap_diagnostics": {"exceedance_as_warning_only": self.mode == 'conversion_aligned'},
+                    "episode": self.episode, "session_id": self.session_id,
                     "active": self.active,
                     "recording_elapsed_sec": max(0.0, (self._ended_at if self._ended_at is not None else time.monotonic()) - self.started_at) if self.episode else None,
                     "driver_health": {topic: dict(value) for topic, value in self.driver_health.items()},
