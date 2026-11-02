@@ -297,6 +297,9 @@ collector_name="sharpa-data-collection-$$"
 source "$REPO_ROOT/ops/lib/collection_storage.sh"
 source "$REPO_ROOT/ops/lib/collection_transfer.sh"
 collection_transfer_start
+# Exclude startup camera recovery until this collector and finalization exit.
+exec 8>"/tmp/gello-camera-use-$(id -u).lock"
+flock -s -w 120 8
 docker compose run -d --name "$collector_name" --no-deps \
   --user "$(id -u):$(id -g)" \
   -e HOME=/tmp \

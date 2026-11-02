@@ -31,7 +31,7 @@ def parser():
     p.add_argument('--profile',default='LYG226360006')
     p.add_argument('--control-port',type=int,default=5593)
     p.add_argument('--takeover',action='store_true',
-                   help='Stop existing arm/hand control services in this Compose project before startup; leaves cameras/recorders untouched')
+                   help='Stop existing arm/hand control services before startup; allow one camera rebuild on no frames, only when no collector is running')
     p.add_argument('--fake-input',action='store_true',help='Manus synthetic input, allowed only with fake Sharpa')
     p.add_argument('--no-cameras',action='store_true',help='Skip shared camera startup')
     return p
@@ -398,7 +398,10 @@ def start_camera_preview(args, root=ROOT):
     if args.no_cameras or not (args.hardware or args.supervised_hardware_validation):
         return False
     try:
-        subprocess.run([str(Path(root)/'ops/run/start_teleop_cameras.sh')],cwd=root,check=True,timeout=140)
+        command = [str(Path(root)/'ops/run/start_teleop_cameras.sh')]
+        if args.takeover:
+            command.append('--takeover')
+        subprocess.run(command,cwd=root,check=True,timeout=2*float(os.environ.get("CAMERA_READY_TIMEOUT_SEC", "90"))+160)
         return True
     except (subprocess.SubprocessError, OSError) as error:
         print('Camera preview unavailable; arm/hand startup continues: '+str(error),flush=True)
