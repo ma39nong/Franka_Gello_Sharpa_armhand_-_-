@@ -1,6 +1,7 @@
 #include "orbbec_camera/frame_timestamp_csv_logger.h"
 
 #include <chrono>
+#include <algorithm>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
@@ -9,15 +10,22 @@
 namespace orbbec_camera {
 namespace {
 
-constexpr size_t kCompletedQueueSoftLimit = 1000;
+int64_t steadyNowUs() {
+  return std::chrono::duration_cast<std::chrono::microseconds>(
+      std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 constexpr size_t kFlushBatchSize = 100;
 constexpr auto kFlushInterval = std::chrono::seconds(1);
 
 }  // namespace
 
 FrameTimestampCsvLogger::FrameTimestampCsvLogger(bool enabled, const std::string &csv_file_path,
-                                                 rclcpp::Logger logger)
-    : logger_(std::move(logger)), enabled_(enabled), csv_file_path_(csv_file_path) {
+                                                 rclcpp::Logger logger, size_t max_pending_rows,
+                                                 int64_t pending_timeout_us, size_t max_completed_rows)
+    : logger_(std::move(logger)), enabled_(enabled),
+      max_pending_rows_(std::max<size_t>(1, max_pending_rows)),
+      max_completed_rows_(std::max<size_t>(1, max_completed_rows)),
+      pending_timeout_us_(std::max<int64_t>(1, pending_timeout_us)), csv_file_path_(csv_file_path) {
   if (!enabled_) {
     return;
   }
@@ -100,6 +108,7 @@ void FrameTimestampCsvLogger::shutdown() {
     }
   }
 
+  writer_draining_ = true;
   completed_rows_cv_.notify_all();
   if (writer_thread_.joinable()) {
     writer_thread_.join();
@@ -140,11 +149,13 @@ void FrameTimestampCsvLogger::recordFrameSetInternal(
 
     PendingRow row;
     row.row_id = next_row_id_++;
+    row.created_steady_us = steadyNowUs();
 
     if (track_color && color_frame) {
       populateArrivalData(row.color, TrackedStream::COLOR, color_frame, arrival_system_us,
                           arrival_steady_us, color_image_publish_expected);
-      color_frame_index_to_row_id_[row.color.frame_index] = row.row_id;
+      prepareFrameLocked(color_frame, TrackedStream::COLOR);
+      color_frame_index_to_row_id_[row.color.frame_key] = row.row_id;
       if (!color_image_publish_expected) {
         finalizeStreamWithoutPublish(row.color);
       }
@@ -155,7 +166,8 @@ void FrameTimestampCsvLogger::recordFrameSetInternal(
     if (track_depth && depth_frame) {
       populateArrivalData(row.depth, TrackedStream::DEPTH, depth_frame, arrival_system_us,
                           arrival_steady_us, depth_image_publish_expected);
-      depth_frame_index_to_row_id_[row.depth.frame_index] = row.row_id;
+      prepareFrameLocked(depth_frame, TrackedStream::DEPTH);
+      depth_frame_index_to_row_id_[row.depth.frame_key] = row.row_id;
       if (!depth_image_publish_expected) {
         finalizeStreamWithoutPublish(row.depth);
       }
@@ -164,6 +176,7 @@ void FrameTimestampCsvLogger::recordFrameSetInternal(
     }
 
     pending_rows_.emplace(row.row_id, row);
+    limitPendingLocked();
     if (isRowReady(row)) {
       auto it = pending_rows_.find(row.row_id);
       if (it != pending_rows_.end()) {
@@ -191,6 +204,7 @@ void FrameTimestampCsvLogger::recordStandaloneFrameArrivalInternal(
 
     PendingRow row;
     row.row_id = next_row_id_++;
+    row.created_steady_us = steadyNowUs();
 
     const auto tracked_stream = toTrackedStream(stream_type);
     auto &state = tracked_stream == TrackedStream::COLOR ? row.color : row.depth;
@@ -200,10 +214,11 @@ void FrameTimestampCsvLogger::recordStandaloneFrameArrivalInternal(
                         image_publish_expected);
     other_state.final = true;
 
+    prepareFrameLocked(frame, tracked_stream);
     if (tracked_stream == TrackedStream::COLOR) {
-      color_frame_index_to_row_id_[state.frame_index] = row.row_id;
+      color_frame_index_to_row_id_[state.frame_key] = row.row_id;
     } else {
-      depth_frame_index_to_row_id_[state.frame_index] = row.row_id;
+      depth_frame_index_to_row_id_[state.frame_key] = row.row_id;
     }
 
     if (!image_publish_expected) {
@@ -211,6 +226,7 @@ void FrameTimestampCsvLogger::recordStandaloneFrameArrivalInternal(
     }
 
     pending_rows_.emplace(row.row_id, row);
+    limitPendingLocked();
     if (isRowReady(row)) {
       auto it = pending_rows_.find(row.row_id);
       if (it != pending_rows_.end()) {
@@ -231,7 +247,7 @@ void FrameTimestampCsvLogger::recordPreImagePublishInternal(OBStreamType stream_
                                                             int64_t publish_system_us,
                                                             int64_t publish_steady_us) {
   std::optional<PendingRow> ready_row;
-  const auto frame_index = frame->getIndex();
+  const auto frame_key = frameKey(frame);
 
   {
     std::lock_guard<std::mutex> lock(state_mutex_);
@@ -242,12 +258,9 @@ void FrameTimestampCsvLogger::recordPreImagePublishInternal(OBStreamType stream_
     const auto tracked_stream = toTrackedStream(stream_type);
     auto &row_map = tracked_stream == TrackedStream::COLOR ? color_frame_index_to_row_id_
                                                            : depth_frame_index_to_row_id_;
-    auto row_id_it = row_map.find(frame_index);
+    auto row_id_it = row_map.find(frame_key);
     if (row_id_it == row_map.end()) {
-      RCLCPP_WARN_STREAM(logger_,
-                         "Frame timestamp CSV logger missed row mapping for stream "
-                             << (tracked_stream == TrackedStream::COLOR ? "color" : "depth")
-                             << " frame index " << frame_index);
+      // No publish was expected, or this exact frame was cancelled/expired.
       return;
     }
     const auto row_id = row_id_it->second;
@@ -259,8 +272,10 @@ void FrameTimestampCsvLogger::recordPreImagePublishInternal(OBStreamType stream_
 
     auto &state = tracked_stream == TrackedStream::COLOR ? pending_it->second.color
                                                          : pending_it->second.depth;
+    if (state.final) return;
     populatePublishData(state, tracked_stream, publish_system_us, publish_steady_us);
     state.final = true;
+    state.completion_reason = "published";
 
     if (isRowReady(pending_it->second)) {
       ready_row = pending_it->second;
@@ -284,6 +299,7 @@ void FrameTimestampCsvLogger::populateArrivalData(StreamState &state, TrackedStr
   state.has_frame = true;
   state.publish_expected = publish_expected;
   state.frame_index = frame->getIndex();
+  state.frame_key = frameKey(frame);
   if (frame->hasMetadata(OB_FRAME_METADATA_TYPE_FRAME_NUMBER)) {
     state.metadata_frame_number =
         static_cast<int64_t>(frame->getMetadataValue(OB_FRAME_METADATA_TYPE_FRAME_NUMBER));
@@ -343,6 +359,7 @@ std::optional<int64_t> FrameTimestampCsvLogger::updateDelta(std::optional<int64_
 
 void FrameTimestampCsvLogger::finalizeStreamWithoutPublish(StreamState &state) {
   state.final = true;
+  state.completion_reason = "no_raw_subscriber";
 }
 
 bool FrameTimestampCsvLogger::isRowReady(const PendingRow &row) const {
@@ -351,16 +368,13 @@ bool FrameTimestampCsvLogger::isRowReady(const PendingRow &row) const {
 
 void FrameTimestampCsvLogger::enqueueCompletedRow(const PendingRow &row) {
   std::lock_guard<std::mutex> queue_lock(completed_rows_mutex_);
-  completed_rows_.push_back(row);
-  if (completed_rows_.size() > kCompletedQueueSoftLimit) {
-    if (!queue_warning_active_) {
-      RCLCPP_WARN_STREAM(logger_, "Frame timestamp CSV queue size exceeded "
-                                      << kCompletedQueueSoftLimit << " rows");
-      queue_warning_active_ = true;
-    }
-  } else {
-    queue_warning_active_ = false;
+  if (completed_rows_.size() >= max_completed_rows_) {
+    completed_rows_.pop_front();
+    const auto count = ++completed_drop_total_;
+    if ((count & (count - 1)) == 0)
+      RCLCPP_ERROR_STREAM(logger_, "CSV completed queue full; discarded rows total=" << count);
   }
+  completed_rows_.push_back(row);
   completed_rows_cv_.notify_one();
 }
 
@@ -368,8 +382,9 @@ void FrameTimestampCsvLogger::flushPendingRowsLocked(std::vector<PendingRow> &ro
   rows.reserve(rows.size() + pending_rows_.size());
   for (auto &item : pending_rows_) {
     auto row = item.second;
-    row.color.final = true;
-    row.depth.final = true;
+    for (auto *state : {&row.color, &row.depth}) {
+      if (!state->final) { state->final = true; state->completion_reason = "shutdown"; }
+    }
     rows.push_back(std::move(row));
   }
   pending_rows_.clear();
@@ -378,17 +393,18 @@ void FrameTimestampCsvLogger::flushPendingRowsLocked(std::vector<PendingRow> &ro
 }
 
 void FrameTimestampCsvLogger::eraseFrameIndexMappingLocked(const PendingRow &row) {
-  if (row.color.has_frame) {
-    color_frame_index_to_row_id_.erase(row.color.frame_index);
-  }
-  if (row.depth.has_frame) {
-    depth_frame_index_to_row_id_.erase(row.depth.frame_index);
+  for (auto stream : {TrackedStream::COLOR, TrackedStream::DEPTH}) {
+    const auto &state = stream == TrackedStream::COLOR ? row.color : row.depth;
+    auto &map = stream == TrackedStream::COLOR ? color_frame_index_to_row_id_ : depth_frame_index_to_row_id_;
+    auto it = map.find(state.frame_key);
+    if (it != map.end() && it->second == row.row_id) map.erase(it);
   }
 }
 
 std::string FrameTimestampCsvLogger::serializeRow(const PendingRow &row) const {
   std::ostringstream ss;
-  ss << serializeStreamColumns(row.color) << "," << serializeStreamColumns(row.depth);
+  ss << serializeStreamColumns(row.color) << "," << serializeStreamColumns(row.depth)
+     << "," << row.color.completion_reason << "," << row.depth.completion_reason;
   return ss.str();
 }
 
@@ -477,7 +493,80 @@ std::string FrameTimestampCsvLogger::csvHeader() {
       ss << ",";
     }
   }
-  return ss.str();
+  return ss.str() + ",color_completion_reason,depth_completion_reason";
+}
+
+void FrameTimestampCsvLogger::finishRowLocked(uint64_t row_id, const std::string &reason) {
+  auto it = pending_rows_.find(row_id);
+  if (it == pending_rows_.end()) return;
+  for (auto *state : {&it->second.color, &it->second.depth}) {
+    if (!state->final) { state->final = true; state->completion_reason = reason; }
+  }
+  eraseFrameIndexMappingLocked(it->second);
+  enqueueCompletedRow(it->second);
+  pending_rows_.erase(it);
+}
+
+FrameTimestampCsvLogger::FrameKey FrameTimestampCsvLogger::frameKey(
+    const std::shared_ptr<ob::Frame> &frame) {
+  // FrameSet getters create fresh C++/C wrappers. Addresses are NOT frame
+  // identity. The captured tuple survives those wrappers, including reuse of
+  // an SDK frame index after reconnect; an exact duplicate retires the old row.
+  return {frame->getIndex(), frame->getTimeStampUs(), frame->getSystemTimeStampUs()};
+}
+
+void FrameTimestampCsvLogger::prepareFrameLocked(const std::shared_ptr<ob::Frame> &frame,
+                                                TrackedStream stream) {
+  auto &map = stream == TrackedStream::COLOR ? color_frame_index_to_row_id_ : depth_frame_index_to_row_id_;
+  auto it = map.find(frameKey(frame));
+  if (it != map.end()) {
+    ++cancelled_total_;
+    finishRowLocked(it->second, "frame_identity_reused");
+  }
+}
+
+void FrameTimestampCsvLogger::limitPendingLocked() {
+  while (pending_rows_.size() > max_pending_rows_) {
+    auto oldest = std::min_element(pending_rows_.begin(), pending_rows_.end(),
+        [](const auto &a, const auto &b) { return a.first < b.first; });
+    const auto count = ++capacity_total_;
+    if ((count & (count - 1)) == 0)
+      RCLCPP_ERROR_STREAM(logger_, "CSV pending limit exceeded; finalized rows total=" << count);
+    finishRowLocked(oldest->first, "pending_capacity");
+  }
+}
+
+void FrameTimestampCsvLogger::expirePending(int64_t now_us) {
+  std::lock_guard<std::mutex> lock(state_mutex_);
+  std::vector<uint64_t> expired;
+  for (const auto &entry : pending_rows_)
+    if (now_us - entry.second.created_steady_us >= pending_timeout_us_) expired.push_back(entry.first);
+  for (auto id : expired) { ++expired_total_; finishRowLocked(id, "publish_timeout"); }
+  if (!expired.empty()) RCLCPP_WARN_STREAM(logger_, "CSV publish timeout; expired total=" << expired_total_);
+}
+
+void FrameTimestampCsvLogger::cancelFrame(OBStreamType stream_type,
+    const std::shared_ptr<ob::Frame> &frame, const std::string &reason) {
+  if (!enabled_ || !frame || !isTrackedStream(stream_type)) return;
+  std::lock_guard<std::mutex> lock(state_mutex_);
+  if (shutdown_requested_) return;
+  auto &map = stream_type == OB_STREAM_COLOR ? color_frame_index_to_row_id_ : depth_frame_index_to_row_id_;
+  auto it = map.find(frameKey(frame));
+  if (it == map.end()) return;
+  auto row = pending_rows_.find(it->second);
+  if (row == pending_rows_.end()) return;
+  auto &state = stream_type == OB_STREAM_COLOR ? row->second.color : row->second.depth;
+  if (state.final) return;
+  state.final = true; state.completion_reason = reason; ++cancelled_total_;
+  if (isRowReady(row->second)) finishRowLocked(row->first, reason);
+}
+
+FrameTimestampCsvLogger::Stats FrameTimestampCsvLogger::stats() const {
+  std::lock_guard<std::mutex> state(state_mutex_);
+  std::lock_guard<std::mutex> queue(completed_rows_mutex_);
+  return {pending_rows_.size(), color_frame_index_to_row_id_.size()+depth_frame_index_to_row_id_.size(),
+          completed_rows_.size(), expired_total_.load(), capacity_total_.load(),
+          cancelled_total_.load(), completed_drop_total_.load(), writer_failed_.load()};
 }
 
 void FrameTimestampCsvLogger::writerThreadMain() {
@@ -489,11 +578,12 @@ void FrameTimestampCsvLogger::writerThreadMain() {
   auto last_flush = std::chrono::steady_clock::now();
 
   while (true) {
+    expirePending(steadyNowUs());
     std::deque<PendingRow> rows_to_write;
     {
       std::unique_lock<std::mutex> lock(completed_rows_mutex_);
       completed_rows_cv_.wait_for(lock, kFlushInterval, [this]() {
-        return shutdown_requested_ || !completed_rows_.empty();
+        return writer_draining_ || !completed_rows_.empty();
       });
       rows_to_write.swap(completed_rows_);
     }
@@ -509,12 +599,15 @@ void FrameTimestampCsvLogger::writerThreadMain() {
     if (csv_stream_.is_open() && (rows_since_flush >= kFlushBatchSize ||
                                   now - last_flush >= kFlushInterval || shutdown_requested_)) {
       csv_stream_.flush();
+      if (!csv_stream_.good() && !writer_failed_.exchange(true)) {
+        RCLCPP_ERROR(logger_, "CSV write failed; diagnostics are incomplete");
+      }
       rows_since_flush = 0;
       last_flush = now;
     }
 
     std::lock_guard<std::mutex> lock(completed_rows_mutex_);
-    if (shutdown_requested_ && completed_rows_.empty()) {
+    if (writer_draining_ && completed_rows_.empty()) {
       break;
     }
   }
@@ -530,6 +623,12 @@ void FrameTimestampCsvLogger::openCsvIfNeeded() {
   }
   csv_stream_ << csvHeader() << "\n";
   csv_stream_.flush();
+  if (!csv_stream_.good()) {
+    enabled_ = false; writer_failed_ = true;
+    RCLCPP_ERROR(logger_, "Failed to write CSV header");
+    csv_stream_.close();
+    return;
+  }
   RCLCPP_INFO_STREAM(logger_, "Frame timestamp CSV logger enabled: " << csv_file_path_);
 }
 

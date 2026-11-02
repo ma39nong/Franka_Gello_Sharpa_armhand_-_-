@@ -71,3 +71,35 @@ def test_real_bag_three_separate_missing_frames_are_only_warnings(tmp_path, hz):
     assert stats["estimated_missing_frames_max_run"] == 1
     assert stats["source_gap_failure_count"] == 0
     assert stats["source_gap_warning_count"] == 3
+
+
+@pytest.mark.parametrize('loss_event', [False, True])
+def test_bag_driver_loss_event_fails_but_historical_counter_does_not(tmp_path, loss_event):
+    import json
+    from std_msgs.msg import String
+    path = tmp_path/'driver_loss'
+    image_topic = '/cam1/color/image_raw'
+    health_topic = '/cam1/driver_health'
+    writer = rosbag2_py.SequentialWriter()
+    writer.open(rosbag2_py.StorageOptions(uri=str(path), storage_id='sqlite3'), rosbag2_py.ConverterOptions('', ''))
+    for topic, cls in [(image_topic, 'sensor_msgs/msg/Image'), (health_topic, 'std_msgs/msg/String')]:
+        writer.create_topic(rosbag2_py.TopicMetadata(name=topic, type=cls, serialization_format='cdr'))
+    image = Image(height=2, width=2, step=6, encoding='rgb8', data=bytes(12))
+    for i in range(120):
+        stamp = 1_000_000_000 + round(i*1e9/30)
+        image.header.stamp.sec, image.header.stamp.nanosec = divmod(stamp, 1_000_000_000)
+        writer.write(image_topic, serialize_message(image), stamp)
+        if i == 60:
+            msg = String(data=json.dumps(dict(camera_uptime_sec=20, streams=[dict(
+                stream='color', state='QUEUE_OVERFLOW' if loss_event else 'OK',
+                queue_drop_total=1, last_queue_drop_steady_us=50_000_000)])))
+            writer.write(health_topic, serialize_message(msg), stamp+1)
+    del writer
+    failures, report = inspect_bag(path, [
+        TopicContract('camera', image_topic, 'sensor_msgs/msg/Image'),
+        TopicContract('health', health_topic, 'std_msgs/msg/String', required=False)
+    ], continuity_enabled=True)
+    assert bool(failures) == loss_event
+    if loss_event:
+        assert report['continuity']['auto_stop_reason']['category'] == 'driver_queue'
+        assert 1.9 < report['continuity']['auto_stop_reason']['recording_elapsed_sec'] < 2.1

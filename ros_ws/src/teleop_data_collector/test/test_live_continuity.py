@@ -25,10 +25,10 @@ def test_raw_metadata_callbacks_use_per_topic_qos_and_skip_optional_streams(tmp_
                            rosbag_record_args=["--qos-profile-overrides-path", str(profile)],
                            rosbag_record_default_qos={}, create_subscription=subscribe)
     live = LiveContinuity(node)
-    assert set(subscribed) == {camera, tactile}
+    assert set(subscribed) == {camera, tactile, "/cam1/driver_health"}
     assert subscribed[camera][1].reliability == ReliabilityPolicy.RELIABLE
     assert subscribed[tactile][1].reliability == ReliabilityPolicy.BEST_EFFORT
-    assert all(value[2]["raw"] for value in subscribed.values())
+    assert all(subscribed[topic][2]["raw"] for topic in (camera, tactile))
     live.monitor.begin("episode0", 0)
     message = Image()
     message.height = 2
@@ -78,7 +78,7 @@ def test_real_ros_node_loads_tactile_config_and_executor_closes(with_cameras):
             node.config = replace(node.config, topics=tuple(replace(topic, required=False) if topic.topic.startswith("/cam") else topic for topic in node.config.topics))
         assert node.config.continuity_enabled
         live = LiveContinuity(node)
-        assert len(live._subscriptions) == (32 if with_cameras else 28)
+        assert len(live._subscriptions) == (35 if with_cameras else 28)
         assert not any(topic.startswith("/cam") for topic in live.monitor._topics) if not with_cameras else True
         live.start(node, SimpleNamespace(check_continuity=lambda: None))
         assert live._thread.is_alive()
@@ -166,3 +166,31 @@ def test_rgb_gate_without_continuity_only_subscribes_cameras_and_skips_pixels_du
     recording[0] = False
     feed(25, 306)
     assert live.readiness.snapshot(clock[0])['ready']
+
+
+def test_driver_health_adapter_is_bounded_and_latches_only_current_episode_loss(monkeypatch):
+    import json
+    from std_msgs.msg import String
+    subscribed = {}
+    topic = '/cam1/color/image_raw'
+    node = SimpleNamespace(config=SimpleNamespace(continuity_enabled=True, topics=[SimpleNamespace(
+        topic=topic, type_name='sensor_msgs/msg/Image', required=True)]),
+        rosbag_record_args=[], rosbag_record_default_qos={},
+        create_subscription=lambda cls, topic, callback, qos, **kw: subscribed.setdefault(topic, callback))
+    live = LiveContinuity(node)
+    live.monitor.begin('episode0', 10.)
+    monkeypatch.setattr('teleop_data_collector.live_continuity.time.monotonic', lambda: 11.)
+    callback = subscribed['/cam1/driver_health']
+    for invalid in ['', '[]', '{"streams":null}', '{"camera_uptime_sec":1,"streams":[null]}']:
+        callback(String(data=invalid))
+    callback(String(data=json.dumps(dict(camera_uptime_sec=60, pipeline_start_steady_us=1,
+        streams=[dict(stream='color', state='OK', queue_drop_total=2,
+                      last_queue_drop_steady_us=9_000_000, sdk_arrival_count=100)]))))
+    assert live.monitor.snapshot()['auto_stop_reason'] is None
+    callback(String(data=json.dumps(dict(camera_uptime_sec=61, pipeline_start_steady_us=1,
+        streams=[dict(stream='color', state='QUEUE_OVERFLOW', queue_drop_total=3,
+                      last_queue_drop_steady_us=10_900_000)]))))
+    snapshot = live.monitor.snapshot()
+    assert snapshot['auto_stop_reason']['category'] == 'driver_queue'
+    assert snapshot['driver_health'][topic]['sdk_arrival_count'] == 100
+    assert snapshot['driver_health'][topic]['recording_elapsed_sec'] == 1

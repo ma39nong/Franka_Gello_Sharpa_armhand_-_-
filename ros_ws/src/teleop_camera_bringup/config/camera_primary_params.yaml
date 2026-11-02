@@ -75,3 +75,9 @@ right_ir_format: "ANY"
 # ir_height: 0
 # ir_fps: 0
 # ir_format: "ANY"
+
+# Enable only for an explicit timestamp diagnostic run.
+enable_frame_timestamp_csv: false
+
+# Productionize the existing head-camera workaround; other SDK status queries remain.
+diagnostic_period: 0.0

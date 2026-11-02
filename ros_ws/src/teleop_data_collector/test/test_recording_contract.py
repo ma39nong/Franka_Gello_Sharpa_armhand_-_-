@@ -133,7 +133,9 @@ def test_sharpa_tactile_contract_adds_all_ten_finger_stream_pairs():
         for stream in ("wrench", "deformation")
     }
 
-    assert len(topics) == 32
+    assert len(topics) == 35
+    assert sum(topic.required for topic in topics) == 32
+    assert all(not by_topic[f'/cam{i}/driver_health'].required for i in range(3))
     assert expected <= set(by_topic)
     assert all(by_topic[name].required for name in expected)
     assert all(by_topic[name].min_frequency_hz == 18.0 for name in expected)
@@ -177,6 +179,9 @@ def test_sharpa_tactile_rosbag_qos_matches_each_real_publisher():
         "/cam0/depth/image_raw",
         "/cam1/color/image_raw",
         "/cam2/color/image_raw",
+        "/cam0/driver_health",
+        "/cam1/driver_health",
+        "/cam2/driver_health",
         "/cam0/color/camera_info",
         "/cam0/depth/camera_info",
         "/cam1/color/camera_info",

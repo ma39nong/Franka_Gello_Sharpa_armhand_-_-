@@ -887,3 +887,23 @@ def test_custom_task_id_preserved_for_episode_home(tmp_path,monkeypatch):
     assert home['task']==task and home['state']=='pending'
     state=json.loads((recorder.last_bag_dir/'collection_state.json').read_text())
     assert state['after_home']['task']==task
+
+
+def test_driver_queue_overflow_uses_existing_error_finalization(tmp_path, monkeypatch):
+    import time
+    controller, recorder, monitor, signals, _ = _monitored_controller(tmp_path, monkeypatch)
+    now = time.monotonic()
+    monitor.observe_driver_health('/cam1/color/image_raw', dict(
+        state='QUEUE_OVERFLOW', queue_drop_total=1,
+        last_queue_drop_steady_us=round(now*1e6), camera_uptime_sec=60), now)
+    controller.check_continuity()
+    controller.wait_for_finalization()
+    status = controller.status()
+    assert status['state'] == 'INCOMPLETE'
+    assert status['quality'] == '报错'
+    assert status['auto_stop_reason']['category'] == 'driver_queue'
+    assert not status['quality_pending']
+    assert len(signals) == 1
+    state = json.loads((recorder.last_bag_dir/'collection_state.json').read_text())
+    assert not state['finalized']
+    assert state['auto_stop_reason']['camera_uptime_sec'] == 60

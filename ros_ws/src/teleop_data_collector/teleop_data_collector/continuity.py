@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import math
+import time
 import threading
 import uuid
 from typing import Any
@@ -95,10 +96,15 @@ class ContinuityMonitor:
         self.streams: dict[str, StreamStats] = {}
         self.alerts: dict[tuple[str, str], dict[str, Any]] = {}
         self.first_failure: dict[str, Any] | None = None
+        self.started_at = 0.0
+        self._ended_at: float | None = None
+        self.driver_health: dict[str, dict[str, Any]] = {}
 
     def begin(self, episode: str, now: float) -> None:
         with self._lock:
             self.active = True
+            self.started_at = now
+            self._ended_at = None
             self.episode = episode
             self.alerts = {}
             self.first_failure = None
@@ -110,9 +116,10 @@ class ContinuityMonitor:
                 else:
                     self.streams[topic] = StreamStats(policy_for_topic(topic), waiting_since=now)
 
-    def end(self) -> dict[str, Any]:
+    def end(self, now: float | None = None) -> dict[str, Any]:
         with self._lock:
             self.active = False
+            self._ended_at = time.monotonic() if now is None else now
             return self.snapshot()
 
     def observe_message(self, topic: str, message: Any, header_ns: int | None, now: float) -> None:
@@ -189,6 +196,27 @@ class ContinuityMonitor:
                 self.streams[topic].timestamp_failure_count += 1
                 self._notice(topic, "failure", "invalid", None, None, now, error)
 
+    def observe_driver_health(self, topic: str, health: dict[str, Any], now: float, *, bag_event=False, from_bag=False) -> None:
+        with self._lock:
+            if topic not in self._topics:
+                return
+            # One bounded summary per required image stream, including idle uptime.
+            previous = self.driver_health.get(topic, {})
+            if previous.get('pipeline_start_steady_us') != health.get('pipeline_start_steady_us'):
+                previous = {}
+            # Immediate loss events are intentionally small; retain the latest
+            # SDK/publish metrics from the same Pipeline generation.
+            self.driver_health[topic] = {**previous, **health,
+                'recording_elapsed_sec': max(0.0, now-self.started_at) if self.active else None}
+            if not self.active or topic not in self.streams:
+                return
+            dropped_at = float(health.get("last_queue_drop_steady_us") or 0) / 1e6
+            if (bag_event if from_bag else dropped_at >= self.started_at) and health.get("queue_drop_total", 0) > 0:
+                previous = self.alerts.get((topic, "driver_queue"))
+                if previous is None:
+                    self._notice(topic, "failure", "driver_queue", None, None, now,
+                                 "相机驱动颜色队列溢出，主动丢弃帧")
+
     def watchdog(self, now: float) -> None:
         with self._lock:
             if not self.active:
@@ -219,6 +247,9 @@ class ContinuityMonitor:
                  "gap_ms": gap, "estimated_missing_frames": missing,
                  "kind": stats.policy.kind, "message": message,
                  "count": (previous["count"] + 1) if previous else 1}
+        alert["recording_elapsed_sec"] = max(0.0, now - self.started_at)
+        health = self.driver_health.get(topic, {})
+        alert["camera_uptime_sec"] = health.get("camera_uptime_sec")
         self.alerts[key] = alert
         stats.last_notice[category] = now
         if severity == "failure" and self.first_failure is None:
@@ -228,7 +259,10 @@ class ContinuityMonitor:
         with self._lock:
             alerts = [dict(value) for value in self.alerts.values()]
             return {"episode": self.episode, "session_id": self.session_id,
-                    "active": self.active, "streams": {topic: stats.report() for topic, stats in self.streams.items()},
+                    "active": self.active,
+                    "recording_elapsed_sec": max(0.0, (self._ended_at if self._ended_at is not None else time.monotonic()) - self.started_at) if self.episode else None,
+                    "driver_health": {topic: dict(value) for topic, value in self.driver_health.items()},
+                    "streams": {topic: stats.report() for topic, stats in self.streams.items()},
                     "alerts": alerts, "auto_stop_reason": dict(self.first_failure) if self.first_failure else None,
                     "source_warnings": [format_alert(a) for a in alerts if a["severity"] == "warning" and a["category"] == "source"],
                     "transport_warnings": [format_alert(a) for a in alerts if a["category"] == "transport"],

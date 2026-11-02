@@ -33,7 +33,7 @@ def parser():
     p.add_argument('--takeover',action='store_true',
                    help='Stop existing arm/hand control services in this Compose project before startup; leaves cameras/recorders untouched')
     p.add_argument('--fake-input',action='store_true',help='Manus synthetic input, allowed only with fake Sharpa')
-    p.add_argument('--no-cameras',action='store_true',help='Skip shared camera startup and automatic GUI video preview')
+    p.add_argument('--no-cameras',action='store_true',help='Skip shared camera startup')
     return p
 
 
@@ -421,7 +421,7 @@ def main(argv=None):
                 ensure_manus_bridge_current()
             preflight(args.control_port,takeover=args.takeover)
             os.environ.pop('TELEOP_CAMERA_PREVIEW_AUTO',None)
-            if start_camera_preview(args): os.environ['TELEOP_CAMERA_PREVIEW_AUTO']='1'
+            start_camera_preview(args)  # Start shared cameras; preview requires an explicit GUI click.
             print(f"FULL TELEOP source={data['source']} mode={data['mode']}; arms/hands initially DISABLED",flush=True)
             return FullLauncher(ROOT,path,data).run()
     except (ValueError,OSError,RuntimeError,subprocess.CalledProcessError) as error:

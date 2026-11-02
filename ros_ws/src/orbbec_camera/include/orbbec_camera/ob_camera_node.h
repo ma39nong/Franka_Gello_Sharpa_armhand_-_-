@@ -71,6 +71,7 @@
 #include "orbbec_camera/fps_counter.hpp"
 #include "orbbec_camera/fps_delay_status.hpp"
 #include "orbbec_camera/frame_timestamp_csv_logger.h"
+#include "orbbec_camera/frame_stream_health.h"
 #include "jpeg_decoder.h"
 #include <std_msgs/msg/string.hpp>
 #include <fcntl.h>
@@ -772,19 +773,20 @@ class OBCameraNode {
   bool is_color_frame_decoded_ = false;
   std::recursive_mutex device_lock_;
   // For color
-  std::queue<std::shared_ptr<ob::FrameSet>> color_frame_queue_;
+  struct ColorFrameEntry { std::shared_ptr<ob::FrameSet> frames; int64_t enqueued_us; };
+  std::queue<ColorFrameEntry> color_frame_queue_;
   std::shared_ptr<std::thread> colorFrameThread_ = nullptr;
   std::mutex color_frame_queue_lock_;
   std::condition_variable color_frame_queue_cv_;
 
   // For left color
-  std::queue<std::shared_ptr<ob::FrameSet>> left_color_frame_queue_;
+  std::queue<ColorFrameEntry> left_color_frame_queue_;
   std::shared_ptr<std::thread> leftColorFrameThread_ = nullptr;
   std::mutex left_color_frame_queue_lock_;
   std::condition_variable left_color_frame_queue_cv_;
 
   // For right color
-  std::queue<std::shared_ptr<ob::FrameSet>> right_color_frame_queue_;
+  std::queue<ColorFrameEntry> right_color_frame_queue_;
   std::shared_ptr<std::thread> rightColorFrameThread_ = nullptr;
   std::mutex right_color_frame_queue_lock_;
   std::condition_variable right_color_frame_queue_cv_;
@@ -866,6 +868,28 @@ class OBCameraNode {
   int min_depth_limit_ = 0;
   int max_depth_limit_ = 0;
   std::string time_domain_ = "global";  // device, system, global
+  int color_frame_queue_capacity_ = 4;
+  bool frame_watchdog_enabled_ = true;
+  double frame_watchdog_timeout_sec_ = 1.0, frame_watchdog_grace_sec_ = 3.0;
+  double frame_watchdog_log_interval_sec_ = 5.0, frame_watchdog_recovery_sec_ = 2.0;
+  double frame_watchdog_gap_ms_ = 240.0;
+  std::atomic<int64_t> pipeline_start_steady_us_{0};
+  std::map<stream_index_pair, FrameStreamHealth> frame_health_;
+  std::map<stream_index_pair, std::string> health_reported_state_;
+  std::map<stream_index_pair, int64_t> health_last_log_us_, health_recovery_since_us_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr frame_health_pub_;
+  rclcpp::TimerBase::SharedPtr frame_health_timer_;
+  std::mutex frame_health_timer_mutex_;
+  void reportFrameHealth();
+  bool enqueueColorFrame(const std::shared_ptr<ob::FrameSet> &frames,
+                         const stream_index_pair &stream,
+                         std::queue<ColorFrameEntry> &queue,
+                         std::mutex &mutex, std::condition_variable &cv);
+  void consumeColorFrames(const stream_index_pair &stream,
+                          std::queue<ColorFrameEntry> &queue,
+                          std::mutex &mutex, std::condition_variable &cv,
+                          uint8_t *buffer, bool &decoded);
+  bool rawImageDemand(const stream_index_pair &stream) const;
   bool enable_frame_timestamp_csv_ = false;
   std::string frame_timestamp_csv_file_;
   std::unique_ptr<FrameTimestampCsvLogger> frame_timestamp_csv_logger_;

@@ -60,6 +60,7 @@ WUJI_COMMAND_TOPIC = "/teleop/wuji/{side}/command"
 WUJI_STATE_TOPIC = "/teleop/wuji/{side}/joint_states"
 WUJI_TELEMETRY_STATUS_TOPIC = "/teleop/wuji/telemetry_status"
 CAMERA_COLOR_TOPIC = "/cam{index}/color/image_raw"
+CAMERA_DRIVER_HEALTH_TOPIC = "/cam{index}/driver_health"
 
 
 def command_names(active_sides):

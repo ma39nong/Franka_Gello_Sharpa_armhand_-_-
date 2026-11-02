@@ -1736,8 +1736,6 @@ def main() -> int:
         collection_port=args.collection_port,
     )
     window.show()
-    if os.environ.get('TELEOP_CAMERA_PREVIEW_AUTO') == '1':
-        window.camera_preview.live_button.click()
     window.log_cleanup_finished.connect(window.feedback.appendPlainText)
     def clean_old_logs():
         from apps.operator_gui.log_retention import cleanup_logs

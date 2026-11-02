@@ -8,6 +8,8 @@
 #include <deque>
 #include <fstream>
 #include <memory>
+#include <map>
+#include <tuple>
 #include <mutex>
 #include <optional>
 #include <thread>
@@ -20,7 +22,9 @@ namespace orbbec_camera {
 
 class FrameTimestampCsvLogger {
  public:
-  FrameTimestampCsvLogger(bool enabled, const std::string &csv_file_path, rclcpp::Logger logger);
+  FrameTimestampCsvLogger(bool enabled, const std::string &csv_file_path, rclcpp::Logger logger,
+                          size_t max_pending_rows = 256, int64_t pending_timeout_us = 2000000,
+                          size_t max_completed_rows = 1000);
 
   ~FrameTimestampCsvLogger() noexcept;
 
@@ -40,18 +44,26 @@ class FrameTimestampCsvLogger {
   void recordPreImagePublish(OBStreamType stream_type, const std::shared_ptr<ob::Frame> &frame,
                              int64_t publish_system_us, int64_t publish_steady_us);
 
+  void cancelFrame(OBStreamType stream_type, const std::shared_ptr<ob::Frame> &frame,
+                   const std::string &reason);
+  struct Stats { size_t pending, mappings, completed; uint64_t expired, capacity, cancelled, completed_dropped; bool write_failed; };
+  Stats stats() const;
   void shutdown();
 
   bool enabled() const { return enabled_; }
 
  private:
   enum class TrackedStream { COLOR, DEPTH };
+  using FrameKey = std::tuple<uint64_t, uint64_t, uint64_t>;
+  static FrameKey frameKey(const std::shared_ptr<ob::Frame> &frame);
 
   struct StreamState {
     bool has_frame = false;
     bool publish_expected = false;
     bool final = false;
     uint64_t frame_index = 0;
+    FrameKey frame_key{};
+    std::string completion_reason;
 
     std::optional<int64_t> metadata_frame_number;
     std::optional<int64_t> sensor_ts_us;
@@ -79,6 +91,7 @@ class FrameTimestampCsvLogger {
 
   struct PendingRow {
     uint64_t row_id = 0;
+    int64_t created_steady_us = 0;
     StreamState color;
     StreamState depth;
   };
@@ -136,23 +149,30 @@ class FrameTimestampCsvLogger {
   rclcpp::Logger logger_;
   bool enabled_ = false;
   std::atomic_bool shutdown_requested_{false};
-  bool writer_failed_ = false;
-  bool queue_warning_active_ = false;
+  std::atomic_bool writer_failed_{false};
+  size_t max_pending_rows_, max_completed_rows_;
+  int64_t pending_timeout_us_;
+  std::atomic<uint64_t> expired_total_{0}, capacity_total_{0}, cancelled_total_{0}, completed_drop_total_{0};
+  void finishRowLocked(uint64_t row_id, const std::string &reason);
+  void prepareFrameLocked(const std::shared_ptr<ob::Frame> &frame, TrackedStream stream);
+  void expirePending(int64_t now_us);
+  void limitPendingLocked();
+  std::atomic_bool writer_draining_{false};
   std::string csv_file_path_;
   std::ofstream csv_stream_;
   std::thread writer_thread_;
 
   uint64_t next_row_id_ = 1;
   std::unordered_map<uint64_t, PendingRow> pending_rows_;
-  std::unordered_map<uint64_t, uint64_t> color_frame_index_to_row_id_;
-  std::unordered_map<uint64_t, uint64_t> depth_frame_index_to_row_id_;
+  std::map<FrameKey, uint64_t> color_frame_index_to_row_id_;
+  std::map<FrameKey, uint64_t> depth_frame_index_to_row_id_;
   PreviousStreamTimestamps color_previous_;
   PreviousStreamTimestamps depth_previous_;
 
   std::deque<PendingRow> completed_rows_;
 
   mutable std::mutex state_mutex_;
-  std::mutex completed_rows_mutex_;
+  mutable std::mutex completed_rows_mutex_;
   std::condition_variable completed_rows_cv_;
 };
 

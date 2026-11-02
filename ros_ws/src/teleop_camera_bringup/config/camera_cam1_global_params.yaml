@@ -20,7 +20,7 @@ interleave_skip_enable: false
 interleave_skip_index: 1
 time_domain: "global" # global, device, system
 enable_sync_host_time: true
-enable_frame_timestamp_csv: true
+enable_frame_timestamp_csv: false
 
 trigger_out_enabled: false
 frames_per_trigger: 0

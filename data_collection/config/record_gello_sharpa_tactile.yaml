@@ -199,6 +199,18 @@ teleop_data_collector:
         type: sensor_msgs/msg/Image
         min_frequency_hz: 18.0
         max_gap_ms: 500.0
+      cam0_driver_health:
+        topic: /cam0/driver_health
+        type: std_msgs/msg/String
+        required: false
+      cam1_driver_health:
+        topic: /cam1/driver_health
+        type: std_msgs/msg/String
+        required: false
+      cam2_driver_health:
+        topic: /cam2/driver_health
+        type: std_msgs/msg/String
+        required: false
     static_topics:
       cam0_info:
         topic: /cam0/color/camera_info

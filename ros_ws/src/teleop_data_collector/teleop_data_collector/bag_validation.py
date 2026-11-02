@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from bisect import bisect_left
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -298,8 +299,8 @@ def inspect_bag(
     configured = {item.topic: item for item in topic_contracts}
     from .continuity import ContinuityMonitor, policy_for_topic
     continuity = ContinuityMonitor([item.topic for item in configured.values() if item.required]) if continuity_enabled else None
-    if continuity is not None:
-        continuity.begin(bag_path.name, 0.0)
+    continuity_started = False
+    last_continuity_time = 0.0
     reader = rosbag2_py.SequentialReader()
     reader.open(
         rosbag2_py.StorageOptions(
@@ -316,6 +317,8 @@ def inspect_bag(
         for topic, type_name in actual_types.items()
         if topic in configured
     }
+    from teleop_core.contract import CAMERA_DRIVER_HEALTH_TOPIC
+    health_topics = {CAMERA_DRIVER_HEALTH_TOPIC.format(index=i): i for i in range(3)}
     streams: dict[str, StreamSamples] = defaultdict(StreamSamples)
     content_failures: list[str] = []
     telemetry_counters = {"velocity_sources": set()}
@@ -326,6 +329,32 @@ def inspect_bag(
         if topic not in configured or topic not in message_classes:
             continue
         bag_time_ns = int(bag_time_ns)
+        if continuity is not None:
+            if not continuity_started:
+                continuity.begin(bag_path.name, bag_time_ns / 1e9)
+                continuity_started = True
+            last_continuity_time = bag_time_ns / 1e9
+        if continuity is not None and topic in health_topics:
+            try:
+                data = deserialize_message(serialized, message_classes[topic]).data
+                if len(data) > 65536:
+                    raise ValueError("oversized camera health report")
+                health = json.loads(data)
+                for value in health.get('streams', [])[:4]:
+                    if value.get('stream') not in ('color', 'depth'):
+                        continue
+                    image_topic = f"/cam{health_topics[topic]}/{value['stream']}/image_raw"
+                    value = dict(value, camera_uptime_sec=health.get('camera_uptime_sec'),
+                                 pipeline_start_steady_us=health.get('pipeline_start_steady_us'))
+                    # Receive times in bag and driver steady times are different
+                    # domains. Only an explicit loss event recorded in this bag
+                    # can fail disk validation; old cumulative counters cannot.
+                    event = value.get('state') == 'QUEUE_OVERFLOW'
+                    continuity.observe_driver_health(image_topic, value, bag_time_ns / 1e9, bag_event=event, from_bag=True)
+            except (ValueError, TypeError, KeyError, AttributeError) as error:
+                if len(content_failures) < 100:
+                    content_failures.append(f"{topic}: invalid driver health: {error}")
+            continue
         stream = streams[topic]
         stream.bag_times_ns.append(bag_time_ns)
         try:
@@ -543,7 +572,7 @@ def inspect_bag(
             "hand state velocity provenance is not exclusively finite_difference"
         )
 
-    continuity_report = continuity.end() if continuity is not None else {}
+    continuity_report = continuity.end(last_continuity_time) if continuity is not None else {}
     failures.extend(continuity_report.get("failures", []))
     report = {
         "continuity": continuity_report,
