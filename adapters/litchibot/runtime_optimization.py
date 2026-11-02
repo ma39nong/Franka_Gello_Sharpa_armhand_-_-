@@ -11,15 +11,40 @@ from .normal_telemetry import DeferredTelemetry
 SETTINGS = Path(__file__).resolve().parents[2] / 'config/sharpa_runtime.json'
 
 
-def optimization_enabled():
-    override = os.environ.get('SHARPA_RUNTIME_OPTIMIZATION')
-    if override is not None:
-        return override == '1'
+FEATURES = ('diagnostics_enabled', 'tactile_batching_enabled', 'udp_buffer_tuning_enabled')
+
+
+def _settings():
     try:
-        return json.loads(SETTINGS.read_text()).get('enabled') is True
-    except (OSError, ValueError, AttributeError):
-        # Missing or invalid settings use the original implementation.
-        return False
+        settings = json.loads(SETTINGS.read_text())
+        return settings if isinstance(settings, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _legacy_enabled(settings):
+    override = os.environ.get('SHARPA_RUNTIME_OPTIMIZATION')
+    return override == '1' if override is not None else settings.get('enabled') is True
+
+
+def optimization_enabled():
+    """Legacy umbrella value; individual features use optimization_settings()."""
+    return _legacy_enabled(_settings())
+
+
+def optimization_settings():
+    """Explicit booleans override legacy defaults; environment 0 disables all.
+
+    Preserve the old fail-closed behavior for other environment values too.
+    Invalid explicit fields disable that feature rather than accepting truthy
+    strings or numbers. Missing/invalid files use legacy defaults.
+    """
+    settings = _settings()
+    override = os.environ.get('SHARPA_RUNTIME_OPTIMIZATION')
+    if override is not None and override != '1':
+        return dict.fromkeys(FEATURES, False)
+    fallback = _legacy_enabled(settings)
+    return {key: settings[key] is True if key in settings else fallback for key in FEATURES}
 
 
 def tune_udp_buffers(ports=(50011, 50021), requested_bytes=4 * 1024 * 1024):
@@ -55,14 +80,12 @@ def tune_udp_buffers(ports=(50011, 50021), requested_bytes=4 * 1024 * 1024):
 
 
 class RuntimeDiagnostics:
-    """Bounded, off-thread logging; all device inspection stays on the owner."""
+    """Existing bounded timing logs only; never queries a device or SDK."""
     def __init__(self, logger):
         self.logger = logger
         self.worker = DeferredTelemetry()
         self.last_notice = {}
         self.last_state_tick = None
-        self.next_fault_check = time.monotonic() + 5
-        self.faults = {}
 
     def warn(self, key, message):
         now = time.monotonic()
@@ -83,27 +106,6 @@ class RuntimeDiagnostics:
             if gap_ms >= 55:
                 self.warn('state_interval', f'SHARPA_TIMING state callback interval: {gap_ms:.3f} ms')
         self.last_state_tick = now
-
-    def inspect_faults(self, hands):
-        now = time.monotonic()
-        if now < self.next_fault_check:
-            return
-        self.next_fault_check = now + 5
-        for side, hand in hands.items():
-            wave = getattr(hand, '_wave', None)
-            if wave is None or not hasattr(wave, 'get_fault_code'):
-                continue
-            started = time.perf_counter()
-            try:
-                faults = str(wave.get_fault_code())
-                if faults != self.faults.get(side):
-                    self.faults[side] = faults
-                    message = f'SHARPA_FAULT {side.value}: {faults}'
-                    self.worker.submit(('fault', side.value), lambda m=message: self.logger.info(m))
-            except Exception as error:
-                self.warn(('fault', side.value), f'SHARPA_FAULT {side.value}: inspection failed: {error}')
-            finally:
-                self.observe(f'{side.value}.get_fault_code', started)
 
     def close(self):
         self.worker.close()

@@ -56,9 +56,17 @@ def test_normal_manus_original_sender(tmp_path, monkeypatch, isolated_guard_path
     monkeypatch.setattr(SharpaSdkHand, '_load_sdk', forbidden)
     monkeypatch.setattr(validation_driver, 'ensure_clear_graph', Mock())
     hands = []
+    fault_query = Mock(side_effect=AssertionError('No automatic fault queries'))
+    published = []
+    original_publish_state = original.SharpaDriverNode._publish_state
+    def publish_state(node):
+        published.append(True)
+        return original_publish_state(node)
+    monkeypatch.setattr(original.SharpaDriverNode, '_publish_state', publish_state)
     def create(configuration, **kwargs):
         assert kwargs['use_fake_hardware'] is (mode == 'fake')
         hand = MockSharpaHand(configuration)
+        hand._wave = SimpleNamespace(get_fault_code=fault_query)
         hand.send_action = Mock(wraps=hand.send_action)
         if mode == 'normal':
             hand._manager = SimpleNamespace(get_all_devices=lambda: [SimpleNamespace(sn=configuration.serial, hand_side=configuration.side)])
@@ -68,13 +76,31 @@ def test_normal_manus_original_sender(tmp_path, monkeypatch, isolated_guard_path
     monkeypatch.setattr(original, 'create_hand', create)
     def exercise(node):
         runtime = node.full
-        from adapters.litchibot.runtime_optimization import optimization_enabled
-        optimized=optimization_enabled()
-        assert node.full_tactile.batch_size==(2 if optimized else None)
-        assert hasattr(node,'runtime_diagnostics') is optimized
+        diagnostics = getattr(node, 'runtime_diagnostics', None)
+        if diagnostics is not None:
+            diagnostics.state_tick = Mock(wraps=diagnostics.state_tick)
+            diagnostics.observe = Mock(wraps=diagnostics.observe)
+        before = len(published)
+        publishers = {side: Mock(wraps=publisher) for side, publisher in node._state_publishers.items()}
+        with patch.dict(node._state_publishers, publishers):
+            node._publish_state()
+        assert len(published) == before + 1
+        assert len(publishers) == 2
+        for publisher in publishers.values():
+            publisher.publish.assert_called_once()
+            assert len(publisher.publish.call_args.args[0].position) == 22
+        if diagnostics is not None:
+            diagnostics.state_tick.assert_called_once_with()
+            assert diagnostics.observe.call_args.args[0] == 'state_publish'
+        fault_query.assert_not_called()
+        from adapters.litchibot.runtime_optimization import optimization_settings
+        settings=optimization_settings()
+        batched=settings['tactile_batching_enabled']
+        assert node.full_tactile.batch_size==(2 if batched else None)
+        assert hasattr(node,'runtime_diagnostics') is settings['diagnostics_enabled']
         channels=len(node._tactile_publishers)
         if channels:
-            rounds=(channels+1)//2 if optimized else 1
+            rounds=(channels+1)//2 if batched else 1
             rate=float(node.get_parameter('tactile_poll_rate_hz').value)
             assert node._tactile_timer.timer_period_ns*rounds==pytest.approx(1e9/rate,abs=rounds)
         assert runtime.standalone_manus and node._command_timeout_s == 0
@@ -256,3 +282,21 @@ def test_normal_manus_original_sender(tmp_path, monkeypatch, isolated_guard_path
         '-p','right_serial:='+('fake-right' if mode=='fake' else 'testR'),
         '-p','stop_on_command_timeout_s:=0.0'])
     forbidden.assert_not_called()
+    fault_query.assert_not_called()
+
+
+@pytest.mark.parametrize('diagnostics,batching,udp', [
+    (d,b,u) for d in (False,True) for b in (False,True) for u in (False,True)])
+def test_independent_runtime_features_through_driver(tmp_path,monkeypatch,isolated_guard_paths,diagnostics,batching,udp):
+    pytest.importorskip('rclpy')
+    from adapters.litchibot import runtime_optimization as optimization
+    flags={'diagnostics_enabled':diagnostics,'tactile_batching_enabled':batching,'udp_buffer_tuning_enabled':udp}
+    monkeypatch.setattr(optimization,'optimization_settings',lambda:flags)
+    tune=Mock(return_value=[])
+    worker=Mock(wraps=optimization.RuntimeDiagnostics)
+    monkeypatch.setattr(optimization,'tune_udp_buffers',tune)
+    monkeypatch.setattr(optimization,'RuntimeDiagnostics',worker)
+    # Uses MockSharpaHand even in normal mode; physical SDK loading is forbidden.
+    test_normal_manus_original_sender(tmp_path,monkeypatch,isolated_guard_paths,'normal','idle')
+    assert tune.call_count==int(udp)
+    assert worker.call_count==int(diagnostics)

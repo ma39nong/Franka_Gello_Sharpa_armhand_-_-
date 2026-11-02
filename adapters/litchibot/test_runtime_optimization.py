@@ -40,8 +40,8 @@ def test_udp_tuning_preserves_socket_ownership_and_other_buffers():
         assert target.getsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF)==before
 
 
-def test_slow_logger_does_not_block_owner_and_fault_reads_stay_on_owner():
-    entered=threading.Event();release=threading.Event();owner=threading.get_ident();reads=[]
+def test_slow_logger_does_not_block_owner_and_has_no_fault_polling():
+    entered=threading.Event();release=threading.Event()
     def slow_log(message):
         entered.set();assert release.wait(2)
     logger=SimpleNamespace(warning=slow_log,info=Mock())
@@ -50,12 +50,41 @@ def test_slow_logger_does_not_block_owner_and_fault_reads_stay_on_owner():
         diagnostics.observe('left.send_action',time.perf_counter()-.02)
         assert entered.wait(1)
         diagnostics.observe('right.send_action',time.perf_counter()-.02)
-        # A tiny enum has the driver's normal side semantics.
-        from enum import Enum
-        class Side(Enum):LEFT='left'
-        wave=SimpleNamespace(get_fault_code=lambda:reads.append(threading.get_ident()) or {})
-        diagnostics.next_fault_check=0
-        diagnostics.inspect_faults({Side.LEFT:SimpleNamespace(_wave=wave)})
-        assert reads==[owner]
+        assert not hasattr(diagnostics, 'inspect_faults')
+        assert not hasattr(diagnostics, 'next_fault_check')
+        assert not hasattr(diagnostics, 'faults')
     finally:
         release.set();diagnostics.close()
+
+
+def test_independent_settings_compatibility(tmp_path, monkeypatch):
+    settings=tmp_path/'runtime.json'
+    monkeypatch.setattr(runtime,'SETTINGS',settings)
+    monkeypatch.delenv('SHARPA_RUNTIME_OPTIMIZATION',raising=False)
+    def check(config, expected):
+        settings.write_text(json.dumps(config))
+        assert runtime.optimization_settings()==dict(zip(runtime.FEATURES,expected))
+    check({'enabled':True},(True,True,True))
+    check({'enabled':False},(False,False,False))
+    check({'enabled':False,'diagnostics_enabled':True,'udp_buffer_tuning_enabled':True},(True,False,True))
+    check({'enabled':True,'diagnostics_enabled':False,'tactile_batching_enabled':False},(False,False,True))
+    monkeypatch.setenv('SHARPA_RUNTIME_OPTIMIZATION','1')
+    check({'enabled':False,'diagnostics_enabled':False},(False,True,True))
+    monkeypatch.setenv('SHARPA_RUNTIME_OPTIMIZATION','0')
+    check(dict.fromkeys(runtime.FEATURES,True),(False,False,False))
+    monkeypatch.setenv('SHARPA_RUNTIME_OPTIMIZATION','invalid')
+    check({'enabled':True},(False,False,False))
+
+
+def test_invalid_settings_are_fail_closed(tmp_path,monkeypatch):
+    settings=tmp_path/'runtime.json';monkeypatch.setattr(runtime,'SETTINGS',settings)
+    monkeypatch.delenv('SHARPA_RUNTIME_OPTIMIZATION',raising=False)
+    for contents in (None,'{broken','[]','null','true','42','{}'):
+        if contents is None:settings.unlink(missing_ok=True)
+        else:settings.write_text(contents)
+        assert not any(runtime.optimization_settings().values())
+    settings.write_text(json.dumps({'enabled':True, 'diagnostics_enabled':'true',
+        'tactile_batching_enabled':1,'udp_buffer_tuning_enabled':None}))
+    assert not any(runtime.optimization_settings().values())
+    settings.unlink();monkeypatch.setenv('SHARPA_RUNTIME_OPTIMIZATION','1')
+    assert all(runtime.optimization_settings().values())

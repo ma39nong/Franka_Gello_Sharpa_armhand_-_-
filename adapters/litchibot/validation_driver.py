@@ -191,16 +191,19 @@ def main(argv=None):
                 self.guard_timer=self.create_timer(0.01,self.service_guard)
                 if config and config['source']=='manus':
                     from adapters.litchibot.full_tactile import FullTactilePublisher
-                    from adapters.litchibot.runtime_optimization import optimization_enabled, tune_udp_buffers, RuntimeDiagnostics
-                    optimized=manus_normal and optimization_enabled()
-                    if optimized:
+                    from adapters.litchibot.runtime_optimization import optimization_settings, tune_udp_buffers, RuntimeDiagnostics
+                    settings=optimization_settings()
+                    diagnostics_enabled=manus_normal and settings['diagnostics_enabled']
+                    batching_enabled=manus_normal and settings['tactile_batching_enabled']
+                    udp_enabled=manus_normal and settings['udp_buffer_tuning_enabled']
+                    if diagnostics_enabled:
                         self.runtime_diagnostics=RuntimeDiagnostics(self.get_logger())
-                        if not software:
-                            for result in tune_udp_buffers():
-                                self.get_logger().info('SHARPA_UDP_BUFFER '+json.dumps(result))
-                    self.full_tactile=FullTactilePublisher(self,batch_size=2 if optimized else None,
+                    if udp_enabled and not software:
+                        for result in tune_udp_buffers():
+                            self.get_logger().info('SHARPA_UDP_BUFFER '+json.dumps(result))
+                    self.full_tactile=FullTactilePublisher(self,batch_size=2 if batching_enabled else None,
                         diagnostics=getattr(self,'runtime_diagnostics',None))
-                    if optimized and self._tactile_timer is not None:
+                    if batching_enabled and self._tactile_timer is not None:
                         # Preserve per-channel polling frequency while giving the
                         # state/command callbacks a turn between finger batches.
                         import math
@@ -208,7 +211,10 @@ def main(argv=None):
                         rate=float(self.get_parameter('tactile_poll_rate_hz').value)
                         self.destroy_timer(self._tactile_timer)
                         self._tactile_timer=self.create_timer(1.0/(rate*rounds),self._publish_tactile)
-                    self.get_logger().info('SHARPA_RUNTIME_OPTIMIZATION '+('enabled' if optimized else 'legacy'))
+                    self.get_logger().info('SHARPA_RUNTIME_OPTIMIZATION '+json.dumps({
+                        'diagnostics_enabled':diagnostics_enabled,
+                        'tactile_batching_enabled':batching_enabled,
+                        'udp_buffer_tuning_enabled':udp_enabled and not software}))
             except Exception:
                 self.destroy_node();raise
 
@@ -225,7 +231,6 @@ def main(argv=None):
             try:return super()._publish_state()
             finally:
                 diagnostics.observe('state_publish',started)
-                diagnostics.inspect_faults(self._hands)
 
         def stop_validation(self,reason):
             self.latch.trip(reason)
