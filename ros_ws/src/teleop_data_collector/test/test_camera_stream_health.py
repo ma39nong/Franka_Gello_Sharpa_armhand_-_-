@@ -102,3 +102,14 @@ def test_episode_camera_gate_requires_three_seconds_not_five():
     status = gate.snapshot(3.0)
     assert status['ready']
     assert status['stable_sec'] == 3
+
+
+def test_recovery_exit_code_only_for_missing_or_silent_streams():
+    from teleop_data_collector.camera_stream_health import readiness_timeout_code
+    fresh=StreamWindow('/fresh',30);fresh.observe(9.9,max_gap_sec=.15)
+    silent=StreamWindow('/silent',20);silent.observe(8.0,max_gap_sec=.15)
+    unseen=StreamWindow('/unseen',30)
+    assert readiness_timeout_code({'fresh':fresh},10,3)==1
+    assert readiness_timeout_code({'fresh':fresh,'silent':silent},10,3)==3
+    assert readiness_timeout_code({'fresh':fresh,'unseen':unseen},10,3)==3
+    assert readiness_timeout_code({'unseen':unseen},10)==1

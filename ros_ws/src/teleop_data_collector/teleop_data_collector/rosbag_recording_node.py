@@ -67,10 +67,12 @@ class RosbagDataCollectorNode(Node):
             )
 
     def preflight_failures(self) -> tuple[str, ...]:
+        from .continuity import detection_enabled
         available = dict(self.get_topic_names_and_types())
         configured = tuple(
             TopicContract(topic.name, topic.topic, topic.type_name, topic.required)
             for topic in self.config.topics
+            if detection_enabled(topic.topic, getattr(self.config, "tactile_detection_enabled", True))
         )
         return topic_preflight_failures(configured, available)
 
@@ -83,6 +85,10 @@ class RosbagDataCollectorNode(Node):
             trim_start_sec=self.config.trim_start_sec,
             trim_end_sec=self.config.trim_end_sec,
             continuity_enabled=self.config.continuity_enabled,
+            **({"tactile_detection_enabled": False}
+               if not getattr(self.config, "tactile_detection_enabled", True) else {}),
+            **({'continuity_mode': self.config.continuity_mode, 'alignment_quality': self.config.alignment_quality}
+               if getattr(self.config, 'continuity_mode', 'legacy') != 'legacy' else {}),
         )
 
 
@@ -358,6 +364,8 @@ class RosbagEpisodeRecorder:
         live = self._live_continuity_report
         # Persist the fault even on unexpected exit/discard and future revalidation.
         failures = list(dict.fromkeys([*failures, *live.get("failures", [])]))
+        if failures and state == 'finalized':
+            state, finalized = 'incomplete', False
         if live.get("auto_stop_reason") and state in {"finalized", "interrupted"}:
             state, finalized = "incomplete", False
         payload = {
@@ -373,7 +381,8 @@ class RosbagEpisodeRecorder:
             "live_continuity": live,
             "auto_stop_reason": live.get("auto_stop_reason"),
             "source_warnings": list(dict.fromkeys([*report.get("source_warnings", []), *live.get("source_warnings", [])])),
-            "validation_policy": "source_header_continuity_trimmed_boundary_v3",
+            "validation_policy": ('conversion-aligned-v1' if self._provenance.get('continuity_mode') == 'conversion_aligned'
+                                  else 'source_header_continuity_trimmed_boundary_v3'),
             "boundary_warnings": list(report.get("boundary_warnings") or []),
             "transport_warnings": list(report.get("transport_warnings") or []),
             "updated_at_ns": time.time_ns(),

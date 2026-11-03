@@ -32,7 +32,7 @@ def _bag(tmp_path: Path, *, state: str = "incomplete") -> Path:
     return bag
 
 
-def test_revalidation_finalizes_source_complete_bag_and_preserves_warning(
+def test_revalidation_preserves_original_failure_and_warning(
     tmp_path: Path,
 ) -> None:
     bag = _bag(tmp_path)
@@ -50,9 +50,9 @@ def test_revalidation_finalizes_source_complete_bag_and_preserves_warning(
         bag, trim_start_sec=1.0, trim_end_sec=1.0, inspect=inspect
     )
 
-    assert state["state"] == "finalized"
-    assert state["finalized"] is True
-    assert state["failures"] == []
+    assert state["state"] == "incomplete"
+    assert state["finalized"] is False
+    assert state["failures"] == ["old bag-time failure"]
     assert state["transport_warnings"] == ["cam0 bag gap 250 ms"]
     assert state["boundary_warnings"] == ["cam0 edge accepted by trim"]
     assert state["trim_start_sec"] == 1.0

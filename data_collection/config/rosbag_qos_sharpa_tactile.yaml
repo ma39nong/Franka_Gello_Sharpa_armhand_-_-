@@ -191,3 +191,21 @@
   reliability: best_effort
   durability: volatile
 
+
+/cam0/driver_health:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+
+/cam1/driver_health:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile
+
+/cam2/driver_health:
+  history: keep_last
+  depth: 10
+  reliability: reliable
+  durability: volatile

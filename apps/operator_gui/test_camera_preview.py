@@ -5,6 +5,14 @@ from pathlib import Path
 import pytest
 
 
+def preview_environment(tmp_path):
+    # Only availability is needed; start/begin_review are mocked in these tests.
+    python = tmp_path/'portable_deps/litchi_hardware/.pixi/envs/ros2/bin/python'
+    python.parent.mkdir(parents=True)
+    python.touch()
+    return tmp_path
+
+
 def test_live_requires_explicit_selection_and_eligible_review_is_gated(tmp_path):
     import sqlite3
     from unittest.mock import Mock
@@ -12,7 +20,7 @@ def test_live_requires_explicit_selection_and_eligible_review_is_gated(tmp_path)
     from apps.operator_gui.camera_preview import CameraPreview, COLOR_TOPIC
     app = QApplication.instance() or QApplication([])
     root = Path(__file__).resolve().parents[2]
-    panel = CameraPreview(root)
+    panel = CameraPreview(preview_environment(tmp_path))
     panel.start = Mock()
     bag = tmp_path/'episode1'; bag.mkdir()
     (bag/'metadata.yaml').write_text('rosbag2_bagfile_information: {}\n')
@@ -75,7 +83,7 @@ def test_episode_picker_preserves_mode_on_cancel_or_invalid_sample(tmp_path, mon
     from PySide6.QtWidgets import QApplication, QFileDialog
     from apps.operator_gui.camera_preview import CameraPreview, COLOR_TOPIC
     app = QApplication.instance() or QApplication([])
-    panel = CameraPreview(Path(__file__).resolve().parents[2])
+    panel = CameraPreview(preview_environment(tmp_path))
     episode = tmp_path/'episode'; bag = episode/'rosbag'; bag.mkdir(parents=True)
     (bag/'metadata.yaml').write_text('rosbag2_bagfile_information: {}\n')
     state = episode/'collection_state.json'
@@ -139,3 +147,36 @@ def test_pause_discards_queued_frames_and_seek_uses_new_control_id():
     finally:
         panel.process = None
         panel.close_preview();panel.close();app.processEvents()
+
+
+def test_operator_starts_with_preview_off_even_with_old_auto_environment(monkeypatch, tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from apps.operator_gui.operator_gui import OperatorWindow
+    app = QApplication.instance() or QApplication([])
+    monkeypatch.setenv('TELEOP_CAMERA_PREVIEW_AUTO', '1')
+    monkeypatch.delenv('TELEOP_FULL_CONFIG', raising=False)
+    window = OperatorWindow('127.0.0.1', 1, collection_port=2)
+    try:
+        assert window.camera_preview.process is None
+        assert window.camera_preview.mode is None
+        assert not window.camera_preview.playing
+    finally:
+        window.close()
+        window.deleteLater()
+        app.processEvents()
+
+
+def test_gui_main_never_autoplays_preview_on_start(monkeypatch):
+    from unittest.mock import Mock
+    from apps.operator_gui import operator_gui
+    monkeypatch.setenv('TELEOP_CAMERA_PREVIEW_AUTO', '1')
+    monkeypatch.setattr(sys, 'argv', ['operator_gui.py'])
+    application = Mock()
+    application.exec.return_value = 0
+    window = Mock()
+    monkeypatch.setattr(operator_gui, 'QApplication', Mock(return_value=application))
+    monkeypatch.setattr(operator_gui, 'OperatorWindow', Mock(return_value=window))
+    monkeypatch.setattr(operator_gui.QTimer, 'singleShot', Mock())
+    assert operator_gui.main() == 0
+    window.show.assert_called_once()
+    window.camera_preview.live_button.click.assert_not_called()

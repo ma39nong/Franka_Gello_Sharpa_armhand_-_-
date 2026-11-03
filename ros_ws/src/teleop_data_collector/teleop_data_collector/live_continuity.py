@@ -1,11 +1,12 @@
 """ROS adapter for continuity monitoring and idle RGB readiness; no hardware output."""
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import threading
 import time
 
-from .continuity import ContinuityMonitor
+from .continuity import ContinuityMonitor, detection_enabled
 from .image_metadata import read_image_metadata
 from .camera_stream_health import CameraReadiness
 
@@ -17,8 +18,11 @@ class LiveContinuity:
         from rclpy.serialization import deserialize_message
         from rosidl_runtime_py.utilities import get_message
 
-        required = [topic for topic in node.config.topics if topic.required]
-        self.monitor = ContinuityMonitor([topic.topic for topic in required])
+        required = [topic for topic in node.config.topics if topic.required
+                    and detection_enabled(topic.topic, getattr(node.config, "tactile_detection_enabled", True))]
+        self.monitor = ContinuityMonitor([topic.topic for topic in required],
+            mode=getattr(node.config, 'continuity_mode', 'legacy'),
+            alignment_policy=getattr(node.config, 'alignment_quality', None))
         self._recording_active = recording_active or (lambda: self.monitor.active)
         self.readiness = CameraReadiness([topic.topic for topic in required],
             rgb_enabled=getattr(node.config, 'rgb_preflight_enabled', False),
@@ -64,6 +68,9 @@ class LiveContinuity:
                         message = deserialize_message(serialized, cls)
                         stamp = message.header.stamp
                         header_ns = int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
+                    if self.monitor.mode == 'conversion_aligned':
+                        from .alignment_quality import validate_metadata
+                        validate_metadata(item.topic, message)
                     if camera:
                         brightness = brightness_error = None
                         if not recording and self.readiness.checks_brightness(item.topic):
@@ -83,6 +90,43 @@ class LiveContinuity:
                         self.monitor.invalid(item.topic, f"消息元数据无效: {error}", now)
 
             self._subscriptions.append(node.create_subscription(message_type, topic.topic, callback, qos, raw=True))
+
+        if getattr(node.config, 'continuity_enabled', True):
+            from std_msgs.msg import String
+            from teleop_core.contract import CAMERA_DRIVER_HEALTH_TOPIC
+            cameras = {int(item.topic.split('/')[1][3:]) for item in required
+                       if item.topic.startswith(('/cam0/', '/cam1/', '/cam2/')) and item.type_name == 'sensor_msgs/msg/Image'}
+            for index in sorted(cameras):
+                def health_callback(message, index=index):
+                    try:
+                        if len(message.data) > 65536:
+                            return
+                        report = json.loads(message.data)
+                        if not isinstance(report, dict) or not isinstance(report.get('streams'), list):
+                            return
+                        uptime = float(report['camera_uptime_sec'])
+                        for stream in report.get('streams', [])[:4]:
+                            if not isinstance(stream, dict):
+                                continue
+                            name = stream.get('stream')
+                            if name not in ('color', 'depth'):
+                                continue
+                            topic = f'/cam{index}/{name}/image_raw'
+                            fields = ('image_demand', 'sdk_arrival_count', 'publish_count', 'last_sdk_steady_us',
+                                      'last_publish_steady_us', 'sdk_frame_index', 'publish_frame_index',
+                                      'sdk_gap_total', 'publish_gap_total', 'queue_size', 'queue_high_watermark',
+                                      'queue_drop_total', 'last_queue_drop_steady_us', 'decode_duration_us',
+                                      'frame_processing_duration_us', 'queue_wait_duration_us', 'max_decode_duration_us',
+                                      'max_frame_processing_duration_us', 'max_queue_wait_duration_us')
+                            health = {k: stream[k] for k in fields if isinstance(stream.get(k), (int, float, bool))}
+                            health['state'] = str(stream.get('state', ''))[:32]
+                            health['camera_uptime_sec'] = uptime
+                            health['pipeline_start_steady_us'] = report.get('pipeline_start_steady_us')
+                            self.monitor.observe_driver_health(topic, health, time.monotonic())
+                    except (ValueError, TypeError, KeyError):
+                        return
+                self._subscriptions.append(node.create_subscription(String,
+                    CAMERA_DRIVER_HEALTH_TOPIC.format(index=index), health_callback, 10))
 
     def start(self, node, controller):
         from rclpy.executors import SingleThreadedExecutor, ExternalShutdownException

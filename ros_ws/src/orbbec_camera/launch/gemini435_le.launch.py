@@ -239,6 +239,13 @@ def generate_launch_description():
         DeclareLaunchArgument('enable_sync_host_time', default_value='false'),
         DeclareLaunchArgument('time_sync_period', default_value='6.0'), # seconds
         DeclareLaunchArgument('time_domain', default_value='global'),# global, device, system
+        DeclareLaunchArgument('color_frame_queue_capacity', default_value='4'),
+        DeclareLaunchArgument('frame_watchdog_enabled', default_value='true'),
+        DeclareLaunchArgument('frame_watchdog_timeout_sec', default_value='1.0'),
+        DeclareLaunchArgument('frame_watchdog_grace_sec', default_value='3.0'),
+        DeclareLaunchArgument('frame_watchdog_log_interval_sec', default_value='5.0'),
+        DeclareLaunchArgument('frame_watchdog_recovery_sec', default_value='2.0'),
+        DeclareLaunchArgument('frame_watchdog_gap_ms', default_value='240.0'),
         DeclareLaunchArgument('enable_frame_timestamp_csv', default_value='false'),
         DeclareLaunchArgument('frame_timestamp_csv_file', default_value=''),
         DeclareLaunchArgument('enable_color_undistortion', default_value='false'),

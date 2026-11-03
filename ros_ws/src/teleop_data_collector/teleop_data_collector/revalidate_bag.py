@@ -43,6 +43,15 @@ def revalidate_bag(
     if trim_start_sec < 0.0 or trim_end_sec < 0.0:
         raise ValueError("trim values must be non-negative")
     continuity_kwargs = {"continuity_enabled": True} if state.get("continuity_enabled") else {}
+    if not state.get('tactile_detection_enabled', True):
+        continuity_kwargs['tactile_detection_enabled'] = False
+    if state.get('continuity_mode') == 'conversion_aligned':
+        from .alignment_quality import AlignmentPolicy
+        from dataclasses import fields, replace
+        raw = state.get('alignment_quality') or {}
+        policy = AlignmentPolicy(**{f.name: raw[f.name] for f in fields(AlignmentPolicy) if f.name in raw})
+        policy = replace(policy, trim_start_sec=trim_start_sec, trim_end_sec=trim_end_sec)
+        continuity_kwargs.update(continuity_mode='conversion_aligned', alignment_quality=policy)
     failures, report = inspect(
         bag_path,
         contracts,
@@ -53,6 +62,8 @@ def revalidate_bag(
     failures = tuple(failures) + tuple(state.get("live_continuity", {}).get("failures", []))
     if state.get("auto_stop_reason") and not failures:
         failures = ("recording automatically stopped for a continuity failure",)
+    if (previous_state == 'incomplete' or state.get('failures')) and not failures:
+        failures = tuple(state.get('failures') or ['original incomplete recording cannot be promoted by revalidation'])
     outcome = recording_outcome(exit_code=0, stream_failures=failures)
 
     history = list(state.get("revalidation_history") or [])
@@ -70,7 +81,8 @@ def revalidate_bag(
             "finalized": outcome.finalized,
             "failures": list(outcome.failures),
             "validation_report": report,
-            "validation_policy": "source_header_continuity_trimmed_boundary_v3",
+            "validation_policy": ('conversion-aligned-v1' if state.get('continuity_mode') == 'conversion_aligned'
+                                  else 'source_header_continuity_trimmed_boundary_v3'),
             "trim_start_sec": trim_start_sec,
             "trim_end_sec": trim_end_sec,
             "source_warnings": list(dict.fromkeys([*report.get("source_warnings", []), *state.get("live_continuity", {}).get("source_warnings", [])])),
@@ -80,6 +92,8 @@ def revalidate_bag(
             "updated_at_ns": time.time_ns(),
         }
     )
+    if state.get('continuity_mode') == 'conversion_aligned':
+        state['alignment_quality'] = policy.report()
     _write_json_atomic(state_path, state)
     return state
 

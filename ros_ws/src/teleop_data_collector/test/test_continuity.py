@@ -152,3 +152,34 @@ def test_separate_small_gaps_never_fail_based_on_episode_total(hz, topic, missin
     stamp += 4 * period
     monitor.observe(topic, stamp, (stamp - 1e9) / 1e9)
     assert monitor.snapshot()["auto_stop_reason"]["estimated_missing_frames"] == 3
+
+
+def test_driver_queue_loss_has_uptime_and_recording_age_but_old_loss_is_not_reused():
+    topic = '/cam1/color/image_raw'
+    monitor = ContinuityMonitor([topic])
+    monitor.begin('episode0', 10.)
+    monitor.observe_driver_health(topic, dict(queue_drop_total=3,
+        last_queue_drop_steady_us=9_000_000, camera_uptime_sec=100), 10.2)
+    assert monitor.snapshot()['auto_stop_reason'] is None
+    monitor.observe_driver_health(topic, dict(queue_drop_total=4,
+        last_queue_drop_steady_us=10_500_000, camera_uptime_sec=100.5), 10.6)
+    reason = monitor.snapshot()['auto_stop_reason']
+    assert reason['category'] == 'driver_queue'
+    assert reason['camera_uptime_sec'] == 100.5
+    assert abs(reason['recording_elapsed_sec'] - .6) < 1e-8
+    monitor.begin('episode1', 20.)
+    monitor.observe_driver_health(topic, dict(queue_drop_total=4,
+        last_queue_drop_steady_us=10_500_000, camera_uptime_sec=110), 20.1)
+    assert monitor.snapshot()['auto_stop_reason'] is None
+
+
+def test_driver_watchdog_health_is_observational_and_does_not_stop_episode():
+    topic = '/cam0/depth/image_raw'
+    monitor = ContinuityMonitor([topic])
+    monitor.begin('episode0', 10.)
+    monitor.observe_driver_health(topic, dict(state='SDK_STREAM_STALLED', camera_uptime_sec=20), 10.5)
+    assert monitor.snapshot()['auto_stop_reason'] is None
+    monitor.watchdog(11.01)
+    reason = monitor.snapshot()['auto_stop_reason']
+    assert reason['category'] == 'silence'  # Existing recording watchdog decides.
+    assert reason['camera_uptime_sec'] == 20

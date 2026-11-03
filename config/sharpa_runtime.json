@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "diagnostics_enabled": true,
+  "tactile_batching_enabled": true,
+  "udp_buffer_tuning_enabled": true
+}

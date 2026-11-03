@@ -191,7 +191,30 @@ def main(argv=None):
                 self.guard_timer=self.create_timer(0.01,self.service_guard)
                 if config and config['source']=='manus':
                     from adapters.litchibot.full_tactile import FullTactilePublisher
-                    self.full_tactile=FullTactilePublisher(self)
+                    from adapters.litchibot.runtime_optimization import optimization_settings, tune_udp_buffers, RuntimeDiagnostics
+                    settings=optimization_settings()
+                    diagnostics_enabled=manus_normal and settings['diagnostics_enabled']
+                    batching_enabled=manus_normal and settings['tactile_batching_enabled']
+                    udp_enabled=manus_normal and settings['udp_buffer_tuning_enabled']
+                    if diagnostics_enabled:
+                        self.runtime_diagnostics=RuntimeDiagnostics(self.get_logger())
+                    if udp_enabled and not software:
+                        for result in tune_udp_buffers():
+                            self.get_logger().info('SHARPA_UDP_BUFFER '+json.dumps(result))
+                    self.full_tactile=FullTactilePublisher(self,batch_size=2 if batching_enabled else None,
+                        diagnostics=getattr(self,'runtime_diagnostics',None))
+                    if batching_enabled and self._tactile_timer is not None:
+                        # Preserve per-channel polling frequency while giving the
+                        # state/command callbacks a turn between finger batches.
+                        import math
+                        rounds=math.ceil(len(self._tactile_publishers)/2)
+                        rate=float(self.get_parameter('tactile_poll_rate_hz').value)
+                        self.destroy_timer(self._tactile_timer)
+                        self._tactile_timer=self.create_timer(1.0/(rate*rounds),self._publish_tactile)
+                    self.get_logger().info('SHARPA_RUNTIME_OPTIMIZATION '+json.dumps({
+                        'diagnostics_enabled':diagnostics_enabled,
+                        'tactile_batching_enabled':batching_enabled,
+                        'udp_buffer_tuning_enabled':udp_enabled and not software}))
             except Exception:
                 self.destroy_node();raise
 
@@ -199,6 +222,15 @@ def main(argv=None):
             worker=getattr(self,'full_tactile',None)
             if worker is None:return super()._publish_tactile()
             worker.poll()
+
+        def _publish_state(self):
+            diagnostics=getattr(self,'runtime_diagnostics',None)
+            if diagnostics is None:return super()._publish_state()
+            diagnostics.state_tick()
+            started=time.perf_counter()
+            try:return super()._publish_state()
+            finally:
+                diagnostics.observe('state_publish',started)
 
         def stop_validation(self,reason):
             self.latch.trip(reason)
@@ -236,7 +268,12 @@ def main(argv=None):
 
         def service_guard(self):
             if normal:return self.service_normal()
-            if manus_normal:return self.service_manus()
+            if manus_normal:
+                diagnostics=getattr(self,'runtime_diagnostics',None)
+                started=time.perf_counter()
+                try:return self.service_manus()
+                finally:
+                    if diagnostics is not None:diagnostics.observe('service_manus',started)
             if stop_requested:
                 self.stop_validation('Operator/process shutdown')
                 # Unwind the executor before shutting its context down. Calling
@@ -399,7 +436,11 @@ def main(argv=None):
             self.prepare_open(side)
             if authorize is not None:authorize()
             previous=self._last_command_at[side]
-            super()._on_command(side,message)
+            diagnostics=getattr(self,'runtime_diagnostics',None)
+            started=time.perf_counter()
+            try:super()._on_command(side,message)
+            finally:
+                if diagnostics is not None:diagnostics.observe(f'{side.value}.send_action',started)
             if self._last_command_at[side]<=previous:raise ValueError('Original sender rejected command')
             self.validation_send_count+=1
             return True
@@ -442,6 +483,7 @@ def main(argv=None):
                 finally:
                     try:
                         if getattr(node,'full_tactile',None):node.full_tactile.close()
+                        if getattr(node,'runtime_diagnostics',None):node.runtime_diagnostics.close()
                         if node.full:node.full.close()
                     finally:
                         if normal and shutdown is not None:Node.destroy_node(node)

@@ -135,6 +135,18 @@ install(
   DESTINATION share/${PROJECT_NAME}/udev
 )
 
+option(ORBBEC_BUILD_OFFLINE_TESTS "Build synthetic camera lifecycle/concurrency tests" OFF)
+if(ORBBEC_BUILD_OFFLINE_TESTS)
+  enable_testing()
+  add_executable(camera_driver_offline_test test/camera_driver_offline_test.cpp)
+  target_link_libraries(camera_driver_offline_test ${PROJECT_NAME})
+  target_link_directories(camera_driver_offline_test PRIVATE "${orbbec_sdk_lib}")
+  set_target_properties(camera_driver_offline_test PROPERTIES BUILD_RPATH "${orbbec_sdk_lib}")
+  ament_target_dependencies(camera_driver_offline_test rclcpp)
+  add_test(NAME camera_driver_offline COMMAND camera_driver_offline_test)
+  set_tests_properties(camera_driver_offline PROPERTIES TIMEOUT 30)
+endif()
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()

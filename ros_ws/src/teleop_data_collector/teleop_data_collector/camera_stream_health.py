@@ -167,12 +167,21 @@ class StreamWindow:
             self.reset_count += 1
 
 
+def readiness_timeout_code(windows, now: float, no_frames_exit_code: int = 1) -> int:
+    # Only actual silence is eligible for a service rebuild. Low frequency or
+    # invalid source timestamps while frames keep arriving need diagnosis.
+    if any(w.last_time is None or now - w.last_time >= 1.0 for w in windows.values()):
+        return no_frames_exit_code
+    return 1
+
+
 def wait_for_streams(
     *,
     timeout_sec: float,
     stable_sec: float,
     max_gap_ms: float,
     require_source_timestamps: bool = False,
+    no_frames_exit_code: int = 1,
 ) -> int:
     import rclpy
     from rclpy.qos import (
@@ -248,7 +257,7 @@ def wait_for_streams(
                     max_gap_sec=max_gap_sec,
                     stream=sys.stderr,
                 )
-                return 1
+                return readiness_timeout_code(windows, now, no_frames_exit_code)
             if now >= next_status_at:
                 print("Waiting for stable camera frames:", flush=True)
                 _print_status(windows, now, max_gap_sec=max_gap_sec)
@@ -337,6 +346,7 @@ def main(argv: list[str] | None = None) -> None:
     subparsers = parser.add_subparsers(dest="command", required=True)
     wait_parser = subparsers.add_parser("wait")
     wait_parser.add_argument("--require-source-timestamps", action="store_true")
+    wait_parser.add_argument("--no-frames-exit-code", type=int, choices=(1, 3), default=1)
     wait_parser.add_argument("--timeout-sec", type=float, default=90.0)
     wait_parser.add_argument("--stable-sec", type=float, default=DEFAULT_STABLE_SEC)
     wait_parser.add_argument("--max-gap-ms", type=float, default=DEFAULT_MAX_GAP_MS)
@@ -357,6 +367,7 @@ def main(argv: list[str] | None = None) -> None:
                 stable_sec=args.stable_sec,
                 max_gap_ms=args.max_gap_ms,
                 require_source_timestamps=args.require_source_timestamps,
+                no_frames_exit_code=args.no_frames_exit_code,
             )
         )
     raise SystemExit(validate_bag(args.bag))
