@@ -12,6 +12,7 @@ without affecting the session.
 from __future__ import annotations
 
 import argparse
+from html import escape
 import json
 import sys
 import time
@@ -123,7 +124,7 @@ class QualityDialog(QDialog):
         layout.addWidget(title)
         self.result_label = QLabel()
         self.result_label.setWordWrap(True)
-        self.result_label.setTextFormat(Qt.PlainText)
+        self.result_label.setTextFormat(Qt.RichText)
         layout.addWidget(self.result_label)
         layout.addWidget(QLabel("请选择数据质量，点击后保存："))
         row = QHBoxLayout()
@@ -169,7 +170,11 @@ class QualityDialog(QDialog):
                 "running": "机械臂正在 Home，可同时保存评价。",
                 "done": "机械臂已 Home；评价保存成功后可开始下一段。",
                 "failed": "机械臂 Home 未完成，请通过 Home 按钮或中间踏板重试。"}.get(home.get("state"), "等待停止写盘后 Home。")
-        self.result_label.setText(text)
+        lines = text.split("\n")
+        heading = escape(lines[0])
+        if state == "INCOMPLETE":
+            heading = f'<span style="color: #c22525; font-weight: bold;">{heading}</span>'
+        self.result_label.setText(heading + "".join("<br>" + escape(line) for line in lines[1:]))
         self.set_available(bool(status.get("can_rate_quality")))
 
     def set_available(self, available: bool) -> None:
