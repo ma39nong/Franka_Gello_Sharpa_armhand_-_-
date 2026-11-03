@@ -18,6 +18,13 @@ from teleop_core.contract import (
 )
 
 
+def detection_enabled(topic: str, tactile_detection_enabled: bool = True) -> bool:
+    """Select recorder checks only; leave recorded topics and control untouched."""
+    return tactile_detection_enabled or not (
+        topic.startswith("/sharpa/") and "/tactile/" in topic
+    )
+
+
 @dataclass(frozen=True)
 class ContinuityPolicy:
     frequency_hz: float | None = 30.0

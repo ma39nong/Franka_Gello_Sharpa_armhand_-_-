@@ -2,6 +2,9 @@ teleop_data_collector:
   ros__parameters:
     bag_contract_version: 1
     continuity_enabled: true
+    # Recorder checks only (live + postflight); tactile data is still recorded.
+    # Set true to restore tactile checks. Other streams remain monitored.
+    tactile_detection_enabled: false
     # Rollback: change only continuity_mode to legacy.
     continuity_mode: conversion_aligned
     alignment_quality:

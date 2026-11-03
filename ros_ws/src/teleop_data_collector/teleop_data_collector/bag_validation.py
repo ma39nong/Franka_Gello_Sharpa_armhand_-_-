@@ -291,6 +291,7 @@ def inspect_bag(
     trim_end_sec: float = 0.0,
     continuity_enabled: bool = False,
     continuity_mode: str = 'legacy',
+    tactile_detection_enabled: bool = True,
     alignment_quality=None,
 ) -> tuple[tuple[str, ...], dict[str, Any]]:
     """Read every recorded message and return completeness failures/report."""
@@ -298,8 +299,9 @@ def inspect_bag(
     from rclpy.serialization import deserialize_message
     from rosidl_runtime_py.utilities import get_message
 
-    configured = {item.topic: item for item in topic_contracts}
-    from .continuity import ContinuityMonitor, policy_for_topic
+    from .continuity import ContinuityMonitor, policy_for_topic, detection_enabled
+    configured = {item.topic: item for item in topic_contracts
+                  if detection_enabled(item.topic, tactile_detection_enabled)}
     aligned_mode = continuity_enabled and continuity_mode == 'conversion_aligned'
     continuity = ContinuityMonitor([item.topic for item in configured.values() if item.required],
         mode=continuity_mode, alignment_policy=alignment_quality) if continuity_enabled else None
@@ -613,6 +615,7 @@ def inspect_bag(
     failures.extend(continuity_report.get("failures", []))
     report = {
         "continuity_mode": continuity_mode,
+        "tactile_detection_enabled": tactile_detection_enabled,
         "alignment_quality": continuity_report.get('alignment_quality', {}),
         "continuity": continuity_report,
         "source_warnings": continuity_report.get("source_warnings", []),

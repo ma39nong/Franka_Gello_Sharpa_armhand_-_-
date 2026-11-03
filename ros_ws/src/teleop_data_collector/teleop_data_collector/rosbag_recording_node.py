@@ -67,10 +67,12 @@ class RosbagDataCollectorNode(Node):
             )
 
     def preflight_failures(self) -> tuple[str, ...]:
+        from .continuity import detection_enabled
         available = dict(self.get_topic_names_and_types())
         configured = tuple(
             TopicContract(topic.name, topic.topic, topic.type_name, topic.required)
             for topic in self.config.topics
+            if detection_enabled(topic.topic, getattr(self.config, "tactile_detection_enabled", True))
         )
         return topic_preflight_failures(configured, available)
 
@@ -83,6 +85,8 @@ class RosbagDataCollectorNode(Node):
             trim_start_sec=self.config.trim_start_sec,
             trim_end_sec=self.config.trim_end_sec,
             continuity_enabled=self.config.continuity_enabled,
+            **({"tactile_detection_enabled": False}
+               if not getattr(self.config, "tactile_detection_enabled", True) else {}),
             **({'continuity_mode': self.config.continuity_mode, 'alignment_quality': self.config.alignment_quality}
                if getattr(self.config, 'continuity_mode', 'legacy') != 'legacy' else {}),
         )

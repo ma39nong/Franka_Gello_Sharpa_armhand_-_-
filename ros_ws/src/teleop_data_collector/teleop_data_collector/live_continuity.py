@@ -6,7 +6,7 @@ from pathlib import Path
 import threading
 import time
 
-from .continuity import ContinuityMonitor
+from .continuity import ContinuityMonitor, detection_enabled
 from .image_metadata import read_image_metadata
 from .camera_stream_health import CameraReadiness
 
@@ -18,7 +18,8 @@ class LiveContinuity:
         from rclpy.serialization import deserialize_message
         from rosidl_runtime_py.utilities import get_message
 
-        required = [topic for topic in node.config.topics if topic.required]
+        required = [topic for topic in node.config.topics if topic.required
+                    and detection_enabled(topic.topic, getattr(node.config, "tactile_detection_enabled", True))]
         self.monitor = ContinuityMonitor([topic.topic for topic in required],
             mode=getattr(node.config, 'continuity_mode', 'legacy'),
             alignment_policy=getattr(node.config, 'alignment_quality', None))

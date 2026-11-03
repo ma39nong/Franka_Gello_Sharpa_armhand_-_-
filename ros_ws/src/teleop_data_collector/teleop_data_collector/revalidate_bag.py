@@ -43,6 +43,8 @@ def revalidate_bag(
     if trim_start_sec < 0.0 or trim_end_sec < 0.0:
         raise ValueError("trim values must be non-negative")
     continuity_kwargs = {"continuity_enabled": True} if state.get("continuity_enabled") else {}
+    if not state.get('tactile_detection_enabled', True):
+        continuity_kwargs['tactile_detection_enabled'] = False
     if state.get('continuity_mode') == 'conversion_aligned':
         from .alignment_quality import AlignmentPolicy
         from dataclasses import fields, replace

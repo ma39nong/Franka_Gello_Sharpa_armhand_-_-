@@ -8,7 +8,7 @@ from teleop_data_collector.bag_validation import inspect_bag
 from teleop_data_collector.collector_contract import TopicContract
 
 
-def write_camera_bag(path, hz, missing, *, congestion=False, separate_missing=False):
+def write_camera_bag(path, hz, missing, *, congestion=False, separate_missing=False, gap_start=4):
     topic = "/cam0/color/image_raw" if hz == 20 else "/cam1/color/image_raw"
     writer = rosbag2_py.SequentialWriter()
     writer.open(rosbag2_py.StorageOptions(uri=str(path), storage_id="sqlite3"), rosbag2_py.ConverterOptions("", ""))
@@ -19,7 +19,7 @@ def write_camera_bag(path, hz, missing, *, congestion=False, separate_missing=Fa
     image.step = 6
     image.encoding = "rgb8"
     image.data = bytes(12)
-    skipped = {4 + 10 * i for i in range(missing)} if separate_missing else set(range(4, 4 + missing))
+    skipped = {4 + 10 * i for i in range(missing)} if separate_missing else set(range(gap_start, gap_start + missing))
     for i in range(hz * 4):
         # Inject within the first second, which must not hide internal gaps.
         if i in skipped:
@@ -120,3 +120,27 @@ def test_alignment_rejects_metadata_count_mismatch_even_when_grid_valid(tmp_path
     failures,report=inspect_bag(path,[contract],**kwargs)
     assert report['alignment_quality']['first_failure'] is None
     assert any('message count' in f for f in failures)
+
+
+@pytest.mark.parametrize('mode', ['legacy', 'conversion_aligned'])
+@pytest.mark.parametrize('missing', [0, 15])
+def test_tactile_switch_skips_missing_tactile_but_retains_camera_failures(tmp_path, mode, missing):
+    path = tmp_path / 'switch'
+    camera = write_camera_bag(path, 30, missing, gap_start=45)
+    tactile = [TopicContract(f'{side}_{finger}_{kind}',
+                f'/sharpa/{side}/tactile/{finger}/{kind}',
+                'geometry_msgs/msg/WrenchStamped' if kind == 'wrench' else 'sensor_msgs/msg/Image')
+               for side in ('left', 'right')
+               for finger in ('thumb', 'index', 'middle', 'ring', 'little')
+               for kind in ('wrench', 'deformation')]
+    failures, report = inspect_bag(path, [camera, *tactile], continuity_enabled=True,
+        continuity_mode=mode, tactile_detection_enabled=False)
+    assert bool(failures) == bool(missing)
+    assert report['tactile_detection_enabled'] is False
+    assert not any('/tactile/' in t for t in report['streams'])
+    assert not any('/tactile/' in t for t in report['continuity']['streams'])
+    # Re-enabling the switch restores rejection of the same missing tactile topics.
+    failures, _ = inspect_bag(path, [camera, *tactile], continuity_enabled=True,
+        continuity_mode=mode, tactile_detection_enabled=True)
+    assert failures
+    assert any('/tactile/' in reason for reason in failures)

@@ -78,7 +78,10 @@ def test_real_ros_node_loads_tactile_config_and_executor_closes(with_cameras):
             node.config = replace(node.config, topics=tuple(replace(topic, required=False) if topic.topic.startswith("/cam") else topic for topic in node.config.topics))
         assert node.config.continuity_enabled
         live = LiveContinuity(node)
-        assert len(live._subscriptions) == (35 if with_cameras else 28)
+        assert node.config.tactile_detection_enabled is False
+        assert len([t for t in node.config.topics if "/tactile/" in t.topic]) == 20
+        assert len(live._subscriptions) == (15 if with_cameras else 8)
+        assert not any("/tactile/" in t for t in live.monitor._topics)
         assert not any(topic.startswith("/cam") for topic in live.monitor._topics) if not with_cameras else True
         live.start(node, SimpleNamespace(check_continuity=lambda: None))
         assert live._thread.is_alive()
@@ -194,3 +197,61 @@ def test_driver_health_adapter_is_bounded_and_latches_only_current_episode_loss(
     assert snapshot['auto_stop_reason']['category'] == 'driver_queue'
     assert snapshot['driver_health'][topic]['sdk_arrival_count'] == 100
     assert snapshot['driver_health'][topic]['recording_elapsed_sec'] == 1
+
+
+@pytest.mark.parametrize('enabled', [False, True])
+@pytest.mark.parametrize('mode', ['legacy', 'conversion_aligned'])
+def test_tactile_detection_switch_keeps_camera_and_hand_watchdogs(enabled, mode):
+    camera = '/cam1/color/image_raw'
+    hand = '/sharpa/right/joint_states'
+    tactile = [f'/sharpa/{side}/tactile/{finger}/{kind}'
+               for side in ('left', 'right')
+               for finger in ('thumb', 'index', 'middle', 'ring', 'little')
+               for kind in ('wrench', 'deformation')]
+    entries = [SimpleNamespace(topic=t, required=True,
+               type_name='geometry_msgs/msg/WrenchStamped' if t.endswith('/wrench')
+               else 'sensor_msgs/msg/JointState' if t == hand else 'sensor_msgs/msg/Image')
+               for t in [camera, hand, *tactile]]
+    subscribed = {}
+    def subscribe(cls, topic, callback, qos, **kwargs):
+        subscribed[topic] = callback
+        return object()
+    node = SimpleNamespace(config=SimpleNamespace(topics=entries,
+        tactile_detection_enabled=enabled, continuity_mode=mode),
+        rosbag_record_args=[], rosbag_record_default_qos={}, create_subscription=subscribe)
+    live = LiveContinuity(node)
+    assert set(live.monitor._topics) == {camera, hand, *(tactile if enabled else [])}
+    assert all((t in subscribed) == enabled for t in tactile)
+    assert len(node.config.topics) == 22  # Recording configuration is untouched.
+    live.monitor.begin('episode0', 0.)
+    live.monitor.watchdog(1.01)
+    report = live.monitor.snapshot()
+    assert report['auto_stop_reason'] is not None
+    assert camera in report['streams'] and hand in report['streams']
+    assert all((t in report['streams']) == enabled for t in tactile)
+
+
+@pytest.mark.parametrize('enabled', [False, True])
+def test_node_passes_tactile_switch_to_start_and_postflight(monkeypatch, enabled):
+    from pathlib import Path
+    from teleop_data_collector import rosbag_recording_node as recording
+    camera = SimpleNamespace(name='camera', topic='/cam1/color/image_raw',
+                             type_name='sensor_msgs/msg/Image', required=True)
+    tactile = SimpleNamespace(name='tactile', topic='/sharpa/left/tactile/thumb/wrench',
+                              type_name='geometry_msgs/msg/WrenchStamped', required=True)
+    config = SimpleNamespace(topics=[camera, tactile], tactile_detection_enabled=enabled,
+        continuity_enabled=True, continuity_mode='legacy', trim_start_sec=0., trim_end_sec=0.)
+    node = SimpleNamespace(config=config,
+        get_topic_names_and_types=lambda: [(camera.topic, [camera.type_name])])
+    failures = recording.RosbagDataCollectorNode.preflight_failures(node)
+    assert bool(failures) == enabled
+    seen = {}
+    def inspect(path, topics, **kwargs):
+        assert topics == config.topics  # Keep recording contracts intact.
+        seen.update(kwargs)
+        return (), {}
+    monkeypatch.setattr(recording, 'inspect_bag', inspect)
+    recording.RosbagDataCollectorNode.postflight(node, Path('test_bag'))
+    assert seen.get('tactile_detection_enabled', True) == enabled
+    node.get_topic_names_and_types = lambda: []
+    assert recording.RosbagDataCollectorNode.preflight_failures(node)  # Camera still required.
