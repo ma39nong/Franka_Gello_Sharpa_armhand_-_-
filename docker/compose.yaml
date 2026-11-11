@@ -340,6 +340,8 @@ services:
 
   teleop-cameras:
     <<: *runtime
+    # Camera-only override; the common robot/hand runtime is not replaced.
+    image: ${TELEOP_CAMERA_IMAGE:-franka-upper-body-teleop:latest}
     profiles: [cameras]
     privileged: true
     ipc: private

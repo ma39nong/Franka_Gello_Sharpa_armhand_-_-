@@ -20,11 +20,15 @@ import os,sys,json
 with open(os.environ['CALLS'],'a') as f:f.write(json.dumps(sys.argv[1:])+'\\n')
 a=sys.argv[1:]
 if a[:3]==['compose','ps','-q'] and a[-1]=='teleop-cameras' and os.environ['RUNNING']=='1':print('camera-id')
-elif a[0]=='inspect':print('different' if os.environ['MISMATCH']=='1' else 'TELEOP_CAMERA_CONFIG_HASH='+os.environ['TELEOP_CAMERA_CONFIG_HASH'])
+elif a[0]=='inspect':
+ if '.Config.Image' in ' '.join(a):print(os.environ['TELEOP_CAMERA_IMAGE'])
+ else:print('different' if os.environ['MISMATCH']=='1' else 'TELEOP_CAMERA_CONFIG_HASH='+os.environ['TELEOP_CAMERA_CONFIG_HASH'])
 elif a[0]=='ps' and os.environ['BLOCKED']=='1':print('existing-legacy-collector')
 ''')
     fake.chmod(0o755)
     pgrep=tmp_path/'pgrep';pgrep.write_text('#!/bin/sh\nexit 1\n');pgrep.chmod(0o755)
+    fake_id=tmp_path/'id'
+    fake_id.write_text(f'#!/bin/sh\necho {400000 + os.getpid()}\n');fake_id.chmod(0o755)
     cfg=tmp_path/'cameras.yaml';cfg.write_text('camera_bringup: {}')
     calls=tmp_path/'calls'
     result=subprocess.run([str(ROOT/'ops/run/start_teleop_cameras.sh'),str(cfg)],capture_output=True,text=True,
@@ -72,7 +76,9 @@ from pathlib import Path
 a=sys.argv[1:]
 with open(os.environ['CALLS'],'a') as f:f.write(json.dumps(a)+'\\n')
 if a[:3]==['compose','ps','-q'] and a[-1]=='teleop-cameras':print('camera-id')
-elif a[0]=='inspect':print('TELEOP_CAMERA_CONFIG_HASH='+os.environ['TELEOP_CAMERA_CONFIG_HASH'])
+elif a[0]=='inspect':
+ if '.Config.Image' in ' '.join(a):print(os.environ['TELEOP_CAMERA_IMAGE'])
+ else:print('TELEOP_CAMERA_CONFIG_HASH='+os.environ['TELEOP_CAMERA_CONFIG_HASH'])
 elif a[0]=='ps':
  if os.environ['BLOCK']=='collector':print('collector')
  if os.environ['BLOCK']=='docker':sys.exit(1)
@@ -123,3 +129,32 @@ def test_camera_recovery_guard_fails_closed(monkeypatch):
     assert guard.main()==1
     monkeypatch.setenv('COLLECTION_CONTROL_PORT','invalid')
     assert guard.main()==1
+
+
+def test_shared_camera_image_mismatch_never_restarts_existing_owner(tmp_path):
+    import sys
+    fake = tmp_path / 'docker'
+    fake.write_text(f'#!{sys.executable}\n' + '''import json,os,sys
+args=sys.argv[1:]
+with open(os.environ['CALLS'],'a') as f:f.write(json.dumps(args)+'\\n')
+if args[:3]==['compose','ps','-q']:print('camera-id')
+elif args[0]=='inspect':
+ if '.Config.Image' in ' '.join(args):print('franka-upper-body-teleop:latest')
+ else:print('TELEOP_CAMERA_CONFIG_HASH='+os.environ['TELEOP_CAMERA_CONFIG_HASH'])
+''')
+    fake.chmod(0o755)
+    cfg = tmp_path / 'cameras.yaml'
+    cfg.write_text('camera_bringup: {}')
+    calls = tmp_path / 'calls'
+    # Keep simulated tests out of the production camera lifecycle lock.
+    fake_id = tmp_path / 'id'
+    fake_id.write_text(f'#!/bin/sh\necho {300000 + os.getpid()}\n')
+    fake_id.chmod(0o755)
+    result = subprocess.run([str(ROOT / 'ops/run/start_teleop_cameras.sh'), str(cfg), '--takeover'],
+        capture_output=True, text=True, env={**os.environ, 'PATH': str(tmp_path)+':'+os.environ['PATH'],
+            'CALLS': str(calls), 'ORBBEC_SDK_LICENSE_ACCEPTED': 'YES',
+            'TELEOP_CAMERA_IMAGE': 'gello-teleop-cameras:orbbec-sdk-2.10.6'})
+    assert result.returncode == 1
+    assert 'image mismatch' in result.stderr
+    commands = [json.loads(line) for line in calls.read_text().splitlines()]
+    assert not any('up' in a or 'stop' in a or 'exec' in a for a in commands)

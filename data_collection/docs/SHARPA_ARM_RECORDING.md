@@ -520,3 +520,54 @@ cam0 主配置采用 `diagnostic_period: 0.0` 规避周期温度读取，其他�
 统一遥操入口启动时会主动检查真实图像，不依赖预览是否打开。仅显式带 `--takeover` 时，旧相机服务 8 秒探测仍无帧或已断流、且没有采集终端运行，才会自动重建共享相机服务一次，再等待初始化并要求连续稳定 3 秒。失败后停止重试并提示检查连接；重建会短暂中断全部三台相机，不重启臂手。采集终端空闲、录制或收尾期间均禁止此恢复；录制中的严重缺帧仍按既有报错停止 episode 流程处理。
 
 启动恢复开关已收紧为显式 `--takeover`：普通 `./ops/run/run_gello_full_teleop.sh --hand-source manus --hardware` 只启动/复用与检查相机，无帧时提示失败，不重建。需要尝试恢复时使用 `./ops/run/run_gello_full_teleop.sh --hand-source manus --hardware --takeover`；只有检测到实际无帧/断流且采集保护全部通过，才最多重建一次。健康相机即使带此参数也直接复用。采集入口不会自动传入该开关。
+
+## 2026-11-11：相机 SDK 2.10.6 独立运行环境
+
+共享相机服务支持通过 `docker/.env` 的 `TELEOP_CAMERA_IMAGE` 选择镜像。
+通过实机验收后，本机选择 `gello-teleop-cameras:orbbec-sdk-2.10.6`。
+该项仅覆盖 `teleop-cameras`，臂、手、采集器和公共基础镜像继续使用原环境。
+前文 2.8.6/YUYV 的描述保留为历史排查记录；实际格式以当前部署配置和驱动启动日志为准。
+
+镜像从原基础环境派生，保留现用 ROS 驱动及工程补丁，只覆盖官方 SDK 2.10.6
+及其匹配插件。启动先初始化 ROS overlay，再设置 SDK 路径，检查实际加载版本
+并执行驱动动态符号解析。版本不符或驱动无法加载时直接失败，不静默退回旧 SDK。
+
+迁移电脑时，先按 SDK 许可证要求配置 `ORBBEC_SDK_LICENSE_ACCEPTED=YES`，再执行：
+
+```bash
+bash ops/setup/build_camera_sdk.sh /path/to/official-SDK-2.10.6-linux_x86_64.tar.gz
+```
+
+构建脚本核对官方包 SHA-256（23ec9f7023881cc9061bf0b4ba65735fb16c10e168fd5d62b1548c847e7ddb46），
+无需网络构建，保留 SDK 原始许可证。之后在 `docker/.env` 设置：
+
+```bash
+TELEOP_CAMERA_IMAGE=gello-teleop-cameras:orbbec-sdk-2.10.6
+```
+
+原统一入口和触觉采集命令不变。启动脚本还会检查已有共享服务的镜像名；配置
+已经选择新镜像、运行服务仍是旧镜像时，拒绝直接复用，不自动重建正在使用的服务。
+
+需要回退时，结束 episode 并退出独立采集终端，将上述字段改回
+`franka-upper-body-teleop:latest`，停止共享相机服务后重新启动相机：
+
+```bash
+docker compose -f docker/compose.yaml stop teleop-cameras
+./ops/run/start_teleop_cameras.sh
+```
+
+这只重建相机环境，不刷固件。源时间戳、质量检查、3 秒就绪要求均不改变。
+相机独立验收不等于双臂、双手和模型执行的完整满负载验收。
+
+本机验收并启用结果：两轮各 60 秒独立启动、900 秒持续观察通过；cam1 长测
+27,021 帧，零时间戳倒退，最大源间隔 33.346 ms。就绪前 cam0 有启动积压／间隔，
+原始数据完整保留；按实际连续稳定 3 秒的就绪时点检查后，四路源时间均递增且
+最大间隔小于 150 ms，源时间年龄小于 200 ms。两分钟实际写 bag 的四路消息
+全部递增，SQLite quick_check=ok。已启用独立镜像并通过生产配置的 3 秒就绪检查。
+这不证明低频异常永不复发，原时间戳异常停止规则继续保留。
+
+验收原始证据：`/home/descfly/franka_teleop_data/diagnostics/sdk2106_acceptance_20261111/`，
+包括三轮逐帧时间、SDK 原始 CSV、驱动日志、实际 bag、稳态检查和 `final_report.json`。
+软件回归 272 项相机/采集测试、75 项 GUI/启动测试通过；227 项可选参考转换器等
+测试按环境条件跳过。官方 SDK 与插件负载在实测镜像、正式镜像之间的 247 个文件
+SHA-256 一致。未修改臂手控制或刷固件。

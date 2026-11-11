@@ -20,6 +20,7 @@ export TELEOP_CAMERA_CONFIG="$(realpath -- "$config")"
 export ORBBEC_SDK_LICENSE_ACCEPTED="${ORBBEC_SDK_LICENSE_ACCEPTED:-$(deployment_env_value "$REPO_ROOT/docker/.env" ORBBEC_SDK_LICENSE_ACCEPTED)}"
 [[ "$ORBBEC_SDK_LICENSE_ACCEPTED" == YES ]] || { echo 'Orbbec SDK license acceptance is required in docker/.env.' >&2; exit 2; }
 export TELEOP_CAMERA_CONFIG_HASH="$(sha256sum "$TELEOP_CAMERA_CONFIG" | awk '{print $1}')"
+export TELEOP_CAMERA_IMAGE="${TELEOP_CAMERA_IMAGE:-$(deployment_env_default "$REPO_ROOT/docker/.env" TELEOP_CAMERA_IMAGE franka-upper-body-teleop:latest)}"
 export TELEOP_CAMERA_UID="$(id -u)" TELEOP_CAMERA_GID="$(id -g)"
 cd "$REPO_ROOT/docker"
 # Serialize GUI and recorder startup so only one driver owner can be created.
@@ -30,6 +31,12 @@ if [[ -n "$camera_id" ]]; then
   current_hash="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$camera_id" | sed -n 's/^TELEOP_CAMERA_CONFIG_HASH=//p')"
   [[ "$current_hash" == "$TELEOP_CAMERA_CONFIG_HASH" ]] || {
     echo 'Shared cameras use a different deployment config; stop them only after recording has finished.' >&2; exit 1;
+  }
+  current_image="$(docker inspect --format '{{.Config.Image}}' "$camera_id")"
+  [[ "$current_image" == "$TELEOP_CAMERA_IMAGE" ]] || {
+    echo "Shared camera image mismatch: running=$current_image, configured=$TELEOP_CAMERA_IMAGE." >&2
+    echo 'Finish collection and recreate only teleop-cameras before reusing it; no automatic image takeover.' >&2
+    exit 1
   }
   reused=true
   echo 'Reusing shared cam0/cam1/cam2 service.'

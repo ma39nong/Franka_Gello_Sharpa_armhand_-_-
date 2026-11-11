@@ -117,7 +117,10 @@ def test_cam1_global_repair_is_isolated_from_other_camera_profiles():
     for name in (name for name in ("cameras.yaml", "cameras.yaml.example")
                  if (REPO_ROOT / "data_collection/config" / name).exists()):
         cameras = yaml.safe_load((REPO_ROOT / "data_collection/config" / name).read_text())["camera_bringup"]
-        assert cameras["cam1"]["config_file"] == "camera_cam1_global_params.yaml"
+        # Both the optional YUYV profile and the deployed MJPG/ANY wrist
+        # profile are supported. Local deployment selects the active one.
+        assert cameras["cam1"]["config_file"] in {
+            "camera_cam1_global_params.yaml", "camera_secondary_params.yaml"}
         assert cameras["cam2"]["config_file"] == "camera_secondary_params.yaml"
         assert cameras["cam0"]["config_file"] == "camera_primary_params.yaml"
 
